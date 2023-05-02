@@ -9,11 +9,11 @@ function generateFrame(nx::Integer,
         primarySection::Section,
         joistSection::Section,
         braceSection::Section;
-        columnRelease::Symbol = :fixedfixed,
-        primaryRelease::Symbol = :fixedfixed,
-        joistRelease::Symbol = :fixedfixed,
-        braceRelease::Symbol = :freefree,
-        base::Vector{Real} = [0., 0., 0.]
+        columnRelease = :fixedfixed,
+        primaryRelease = :fixedfixed,
+        joistRelease = :fixedfixed,
+        braceRelease = :freefree,
+        base = [0., 0., 0.]
         )
 
 
@@ -74,7 +74,7 @@ function generateFrame(nx::Integer,
     primreshaped = reshape(primaries, ny+1, nx, nz)
 
     secondaries = Vector{Union{BridgeElement, Element}}()
-    njoists = Int(round(x / joistspacing))
+    njoists = Int(round(dx / joistspacing))
 
     #main bridge elements
     for k in 1:nz
