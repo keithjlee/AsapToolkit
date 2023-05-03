@@ -141,6 +141,7 @@ function generateFrame(nx::Integer,
     elements = [columns; primaries; secondaries; braces]
 
     model = Model(flatnodes, elements, loads)
+    solve!(model)
 
-    return model
+    return model;
 end
