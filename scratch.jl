@@ -10,84 +10,150 @@ begin
     girder = toASAPframe((W[iStiffness])[Int(round(nsecs * 0.5))], mat.E, mat.G)
     joist = toASAPframe((W[iStiffness])[Int(round(nsecs * .2))], mat.E, mat.G)
 
+    iArea = sortperm(getproperty.(W, :A))
+    col = toASAPframe((W[iArea])[Int(round(nsecs * .75))], mat.E, mat.G)
+
     H = allHSSRound()
     iArea = sortperm(getproperty.(H, :A))
     nh = length(H)
-    tube = toASAPframe((H[iArea])[Int(round(nh * 0.75))], mat.E, mat.G)
+    tube = toASAPframe((H[iArea])[Int(round(nh * 0.9))], mat.E, mat.G)
 
     girder.ρ = joist.ρ = tube.ρ = mat.ρ
 end
 
-nx = 4
-ny = 3
-nz = 10
-dx = 4000
-dy = 3200
-dz = 3500
+begin
+    nx = 6
+    ny = 6
+    nz = 50
+    dx = 4000
+    dy = 3200
+    dz = 3500
+end
 
-model = AsapToolkit.generateFrame(nx,
+@time frame = AsapToolkit.generateFrame(nx,
     dx,
     ny,
     dy,
     nz,
     dz,
     1000,
-    girder,
+    col,
     girder,
     joist,
     tube;
+    # columnPsi = pi/2,
     joistRelease = :fixedfixed,
-    primaryRelease = :freefree);
+    primaryRelease = :fixedfixed);
 
-loads = [LineLoad(j, [0., 0., -20.]) for j in model.elements[:joist]]
+model = frame.model;
+loads = [LineLoad(j, [0., 0., -10.]) for j in model.elements[:joist]];
+@time solve!(model, loads)
 
-solve!(model, loads)
-
-dispfac = 200
+dispfac = Observable(2.)
 resolution = 20
+
+ixn = frame.iExteriorXnodes
+iyn = frame.iExteriorYnodes
+ixj = frame.iExteriorXjoists
+iyp = frame.iExteriorYprimaries
+
+windX = [LineLoad(j, [10., 0., 0.]) for j in model.elements[ixj]]
+windY = [LineLoad(j, [0., 10., 0.]) for j in model.elements[iyp]]
+@time solve!(model, windY);
+
+moms = vcat([e.forces[[6,12]] for e in model.elements]...)
+momrange = maximum(abs.(moms)) .* (-1,1)
+
 begin
     N1 = Point3.([n.position for n in model.nodes])
     E1 = vcat([N1[e.nodeIDs] for e in model.elements]...)
 
-    N2 = [Point3(n.position .+ dispfac * n.displacement[1:3]) for n in model.nodes]
-    E2 = [Point3.(eachcol(displacedshape(e; factor = dispfac, n= resolution))) for e in model.elements]
-    E2simple = vcat([N2[e.nodeIDs] for e in model.elements]...)
+    N2 = @lift([Point3(n.position .+ $dispfac * n.displacement[1:3]) for n in model.nodes])
+    E2 = [@lift(Point3.(eachcol(displacedshape(e; factor = $dispfac, n= resolution)))) for e in model.elements]
+    E2simple = @lift(vcat([$N2[e.nodeIDs] for e in model.elements]...))
 
     axf = getindex.(getproperty.(model.elements, :forces), 7)
     cr = maximum(abs.(axf)) .* (-1,1)
-    lw = abs.(axf ./ maximum(abs.(axf))) .* 10
+    lw = abs.(axf ./ maximum(abs.(axf))) .* 10  #.+ 1
+    lw2 = abs.(moms ./ maximum(abs.(moms))) .* 10  #.+ 1
+
+    nx = @lift($N2[ixn])
+    ny = @lift($N2[iyn])
+    jx = @lift(vcat([$N2[e.nodeIDs] for e in model.elements[ixj]]...))
+    py = @lift(vcat([$N2[e.nodeIDs] for e in model.elements[iyp]]...))
+
+
+    axf2 = @lift(axf .* $dispfac)
+    moms2 = @lift(moms .* $dispfac)
     
-    
-    fig = Figure(backgroundcolor = :black)
+    fig = Figure(backgroundcolor = :black, resolution = (1000,1000))
     ax = Axis3(fig[1,1],
         aspect = :data,
         # aspect = (1,1,1)
         )
 
-    simplifyspines!(ax)
-    gridtoggle!(ax)
+    # simplifyspines!(ax)
+    # gridtoggle!(ax)
+    # hidespines!(ax)
+    # gridtoggle!(ax)
+
+    hidedecorations!(ax)
+    hidespines!(ax)
 
     e_undisp = linesegments!(E1,
         color = :white,
-        linestyle = :dash,
-        linewidth = .5)
+        # linestyle = :dash,
+        linewidth = .2)
 
     # scatter!(N1)
     
-    e_disp = lines!.(E2,
-        color = :white,
-        )
-
-    # e_simp = linesegments!(E2simple,
-    #     color = axf,
-    #     colorrange = cr,
-    #     colormap = pink2blue,
-    #     # linewidth = lw,
-    #     linewidth = 5,
+    # e_disp = lines!.(E2,
+    #     color = :white,
     #     )
 
+    e_simp = linesegments!(E2simple,
+        # color = sign.(axf),
+        color = axf2,
+        colorrange = cr,
+        colormap = pink2blue,
+        linewidth = lw,
+        )
+
+    # e_simp_mom = linesegments!(E2simple,
+    #     # color = sign.(axf),
+    #     color = moms2,
+    #     colorrange = momrange,
+    #     colormap = pink2blue,
+    #     linewidth = lw2,
+    #     )
+
+    pnx = scatter!(nx,
+        color = green)
+    pny = scatter!(ny,
+        color = green)
+    ljx = linesegments!(jx,
+        color = green,
+        linewidth = 5)
+    lpy = linesegments!(py,
+        color = green,
+        linewidth = 5)
+
+    pnx.visible = pny.visible = ljx.visible = lpy.visible = false
+
+    
+    on(dispfac) do _
+        reset_limits!(ax)
+    end
 
     fig
+end
+
+wave = sin.(0:.05:4pi)
+ainc = pi / length(wave)
+
+record(fig, "oscillate.mp4", wave; framerate = 30) do x
+    dispfac[] = x * 20
+    ax.azimuth[] += ainc
 end
 
 begin
@@ -106,6 +172,27 @@ begin
 
     disp = Point3.(eachcol(displacedshape(e; factor = 100)))
     lines(disp, axis = (type = Axis3, aspect = (1,1,1),))
+end
+
+joists = model.elements[:joist]
+jforces = getindex.(getproperty.(joists, :forces), 7)
+columns = model.elements[:column]
+cforces = getindex.(getproperty.(columns, :forces), 7)
+
+begin
+    fig = Figure(backgroundcolor = :black)
+    ax = Axis(fig[1,1],
+        xlabel = "Axial Force [kN]",
+        aspect = 1)
+
+    # J = hist!(jforces ./ 1e3,
+    #     color = blue)
+
+    C = hist!(cforces ./ 1e3,
+        color = green)
+
+    fig
+
 end
 
 begin

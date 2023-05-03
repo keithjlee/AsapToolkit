@@ -4,9 +4,9 @@ using Asap, LinearAlgebra, Statistics
 using Reexport
 @reexport using SteelSections
 
-include("generation/framegenerator.jl")
+include("Generation/FrameGenerator.jl")
+export generateFrame
 
-include("forces/forces.jl")
-
+include("ForceAnalysis/ForceAnalysis.jl")
 
 end # module AsapToolkit

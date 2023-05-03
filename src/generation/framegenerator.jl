@@ -1,3 +1,32 @@
+mutable struct Frame
+    model::Model
+    nx::Integer
+    dx::Real
+    ny::Integer
+    dy::Real
+    nz::Integer
+    dz::Real
+    joistspacing::Real
+    columnSection::Section
+    primarySection::Section
+    joistSection::Section
+    braceSection::Section
+    columnRelease::Symbol
+    primaryRelease::Symbol
+    joistRelease::Symbol
+    braceRelease::Symbol
+    columnPsi::Real
+    primaryPsi::Real
+    joistPsi::Real
+    base::Vector{<:Real}
+    iExteriorXnodes::Vector{Integer}
+    iExteriorYnodes::Vector{Integer}
+    iExteriorXjoists::Vector{Integer}
+    iExteriorYprimaries::Vector{Integer}
+end
+
+
+
 function generateFrame(nx::Integer,
         dx::Real,
         ny::Integer,
@@ -13,6 +42,9 @@ function generateFrame(nx::Integer,
         primaryRelease = :fixedfixed,
         joistRelease = :fixedfixed,
         braceRelease = :freefree,
+        columnPsi = 0.,
+        primaryPsi = pi/2,
+        joistPsi = pi/2,
         base = [0., 0., 0.]
         )
 
@@ -45,6 +77,7 @@ function generateFrame(nx::Integer,
             for k in 1:nz
                 el = Element(nodes[i,j,k], nodes[i,j,k+1], columnSection, columnRelease)
                 # el.Ψ = 0
+                el.Ψ = columnPsi
                 el.id = :column
                 push!(columns, el)
             end
@@ -62,6 +95,7 @@ function generateFrame(nx::Integer,
             for j in 1:ny+1
                 el = Element(nodes[i,j,k], nodes[i+1,j,k], primarySection, primaryRelease)
                 el.id = :primary
+                el.Ψ = primaryPsi
                 push!(primaries, el)
             end
         end
@@ -84,6 +118,7 @@ function generateFrame(nx::Integer,
 
                 for bridge in bridges
                     bridge.id = :joist
+                    bridge.Ψ = joistPsi
                 end
 
                 push!(secondaries, bridges...)
@@ -99,6 +134,7 @@ function generateFrame(nx::Integer,
                 bridge = Element(nodes[i,j,k], nodes[i,j+1,k], joistSection, joistRelease)
                 # bridge.Ψ = 0.
                 bridge.id = :joist
+                bridge.Ψ = joistPsi
                 push!(secondaries, bridge)
             end
         end
@@ -143,5 +179,56 @@ function generateFrame(nx::Integer,
     model = Model(flatnodes, elements, loads)
     solve!(model)
 
-    return model;
+
+    #extract node/element indices
+    iExteriorXnodes = [getproperty.(vec(nodes[:,1,:]), :nodeID); getproperty.(vec(nodes[:,end,:]), :nodeID)]
+    iExteriorYnodes = [getproperty.(vec(nodes[1,:,:]), :nodeID); getproperty.(vec(nodes[end,:,:]), :nodeID)]
+
+    iExteriorXjoists = Vector{Int64}()
+    iExteriorYprimary = Vector{Int64}()
+
+    xExtrema = [first(base), first(base) + dx * nx]
+    yExtrema = [base[2], base[2] + dy * ny]
+    for (i,element) in enumerate(model.elements)
+        if element.id == :joist
+            x = element.nodeStart.position[1]
+            if minimum(abs.(xExtrema .- x)) <= model.tol
+                push!(iExteriorXjoists, i)
+            end
+        elseif element.id == :primary
+            y = element.nodeStart.position[2]
+            if minimum(abs.(yExtrema .- y)) <= model.tol
+                push!(iExteriorYprimary, i)
+            end
+        end
+    end
+
+    frame = Frame(model,
+        nx,
+        dx,
+        ny,
+        dy,
+        nz,
+        dz,
+        joistspacing,
+        columnSection,
+        primarySection,
+        joistSection,
+        braceSection,
+        columnRelease,
+        primaryRelease,
+        joistRelease,
+        braceRelease,
+        columnPsi,
+        primaryPsi,
+        joistPsi,
+        base,
+        iExteriorXnodes,
+        iExteriorYnodes,
+        iExteriorXjoists,
+        iExteriorYprimary)
+
+    return frame;
 end
+
+
