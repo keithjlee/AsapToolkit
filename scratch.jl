@@ -31,7 +31,7 @@ begin
         dz = 3500
     end
 
-    @time frame = AsapToolkit.generateFrame(nx,
+    @time frame = AsapToolkit.generateframe(nx,
         dx,
         ny,
         dy,
@@ -43,7 +43,7 @@ begin
         joist,
         tube;
         # columnPsi = pi/2,
-        joistRelease = :fixedfixed,
+        joistRelease = :joist,
         primaryRelease = :fixedfixed);
 
     model = frame.model;
@@ -168,452 +168,68 @@ begin
 end
 
 
-l = loads[1]
 
-xrange = range(0, e.length, 100)
-w = 20.
-
-mfunc = AsapToolkit.MfuncDict[(typeof(l), e.release)]
-vfunc = AsapToolkit.VfuncDict[(typeof(l), e.release)]
-dfunc = AsapToolkit.DfuncDict[(typeof(l), e.release)]
-
-m = mfunc.(w, e.length, xrange)
-v = vfunc.(w, e.length, xrange)
-d = dfunc.(w, e.length, xrange, e.section.E, e.section.Izz)
-
+#single order
 begin
-    E = mat.E
-    I = joist.Izz
+    l = loads[1]
 
-    L = 6000.
-    n = 100
-    x = range(0, L, n)
+    xrange = range(0, e.length, 100)
+    w = 20.
 
-    P = 100e3 #N
-    frac = 0.6
-    w = 40. #N/mm=kN/m
+    mfunc = AsapToolkit.MfuncDict[(typeof(l), e.release)]
+    vfunc = AsapToolkit.VfuncDict[(typeof(l), e.release)]
+    dfunc = AsapToolkit.DfuncDict[(typeof(l), e.release)]
+
+    m = mfunc.(w, e.length, xrange)
+    v = vfunc.(w, e.length, xrange)
+    d = dfunc.(w, e.length, xrange, e.section.E, e.section.Izz)
+end
+##### truss
+begin
+    n = 31
+    dx = 2000
+    dy = 3000
+    section = toASAPframe(rand(allW()), mat.E, mat.G)
 end
 
-#test Line load
-#FREEFREE
+truss = generatewarren2d(n, dx, dy, section)
+
+model = truss.model
+L1 = [NodeForce(n, [0., -50e3, 0.]) for n in model.nodes[:bottomchord]]
+@time solve!(model, L1);
+
 begin
-    m = MLine_freefree.(w, L, x)
-    v = VLine_freefree.(w, L, x)
-    d = DLine_freefree.(w, L, x, E, I)
-    
+    pts = Point3.([n.position for n in model.nodes])
+    els = vcat([pts[e.nodeIDs] for e in model.elements]...)
+    axf = last.(getproperty.(model.elements, :forces))
+    cr = maximum(abs.(axf)) .* (-1, 1)
+    lw = abs.(axf) ./ maximum(abs.(axf)) .* 10
+
+    dfac = Observable(2.)
+
+    dpts = @lift([Point3(n.position .+ $dfac * n.displacement) for n in model.nodes])
+    dels = @lift(vcat([$dpts[e.nodeIDs] for e in model.elements]...))
+
     fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        ylabel = "[Nmm]",
-        title = "M")
+    ax = Axis(fig[1,1],
+        aspect = DataAspect())
 
-    hidexdecorations!(axM)
-    hlines!(axM, [0.], color = :white)
-    lines!(x, m)
+    hidespines!(ax)
 
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        ylabel = "[N]",
-        title = "V")
+    e2 = linesegments!(dels,
+        color = axf,
+        colorrange = cr,
+        linewidth = lw,
+        colormap = pink2blue)
 
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        ylabel = "[mm]",
-        title = "Δ")
-
-    hlines!(axD, [0.], color = :white)
-    lines!(x, d)
-
-
-
-    t = ThetaLine_freefree.(w, L, x, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
+    on(dfac) do _
+        reset_limits!(ax)
+    end
 
     fig
 end
 
-begin
-    m = MLine_fixedfree.(w, L, x)
-    v = VLine_fixedfree.(w, L, x)
-    d = DLine_fixedfree.(w, L, x, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    hlines!(axM, [0.], color = :white)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    hlines!(axD, [0.], color = :white)
-    lines!(x, d)
-
-
-    t = ThetaLine_fixedfree.(w, L, x, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
-    fig
-end
-
-begin
-    m = MLine_freefixed.(w, L, x)
-    v = VLine_freefixed.(w, L, x)
-    d = DLine_freefixed.(w, L, x, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    hlines!(axM, [0.], color = :white)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    hlines!(axD, [0.], color = :white)
-    lines!(x, d)
-
-    t = ThetaLine_freefixed.(w, L, x, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
-
-    fig
-end
-
-begin
-    m = MLine_fixedfixed.(w, L, x)
-    v = VLine_fixedfixed.(w, L, x)
-    d = DLine_fixedfixed.(w, L, x, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    hlines!(axM, [0.], color = :white)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    hlines!(axD, [0.], color = :white)
-    lines!(x, d)
-
-    t = ThetaLine_fixedfixed.(w, L, x, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
-
-    fig
-end
-
-##### Point Load
-begin
-    m = MPoint_freefree.(P, L, x, frac)
-    v = VPoint_freefree.(P, L, x, frac)
-    d = DPoint_freefree.(P, L, x, frac, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    lines!(x, d)
-
-    t = ThetaPoint_freefree.(P, L, x, frac, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
-
-    fig
-end
-
-begin
-    m = MPoint_fixedfixed.(P, L, x, frac)
-    v = VPoint_fixedfixed.(P, L, x, frac)
-    d = DPoint_fixedfixed.(P, L, x, frac, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    lines!(x, d)
-
-    t = ThetaPoint_fixedfixed.(P, L, x, frac, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
-
-    fig
-end
-
-begin
-    m = MPoint_freefixed.(P, L, x, frac)
-    v = VPoint_freefixed.(P, L, x, frac)
-    d = DPoint_freefixed.(P, L, x, frac, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    lines!(x, d)
-
-    t = ThetaPoint_freefixed.(P, L, x, frac, E, I)
-    axT = Axis(fig[4,1],
-        aspect = nothing,
-        ylabel = "[rad]",
-        title = "Θ")
-
-    hlines!(axT, [0.], color = :white)
-    lines!(x, t)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:4]
-    resize_to_layout!(fig)
-
-    fig
-end
-
-begin
-    m = MPoint_fixedfree.(P, L, x, .2)
-    v = VPoint_fixedfree.(P, L, x, .2)
-    d = DPoint_fixedfree.(P, L, x, .2, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    hlines!(axM, [0.], color = :white)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    hlines!(axD, [0.], color = :white)
-    lines!(x, d)
-
-    # t = ThetaPoint_fixedfixed.(P, L, x, frac, E, I)
-    # axT = Axis(fig[4,1],
-    #     aspect = nothing,
-    #     yreversed = true,
-    #     ylabel = "[rad]",
-    #     title = "Θ")
-
-    # hlines!(axT, [0.], color = :white)
-    # lines!(x, d)
-    
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:3]
-    resize_to_layout!(fig)
-
-    fig
-end
-
-##combined
-begin
-    m = MPoint_freefree.(P, L, x, frac) .+ MLine_freefree.(w, L, x) .+ MPoint_freefree.(50e3, L, x, .25)
-    v = VPoint_freefree.(P, L, x, frac) .+ VLine_freefree.(w, L, x) .+ VPoint_freefree.(50e3, L, x, .25)
-    d = DPoint_freefree.(P, L, x, frac, E, I) .+ DLine_freefree.(w, L, x, E, I) .+ DPoint_freefree.(50e3, L, x, .25, E, I)
-
-    fig = Figure(backgroundcolor = :black)
-    axM = Axis(fig[1,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "M")
-
-    hidexdecorations!(axM)
-    lines!(x, m)
-
-    axV = Axis(fig[2,1],
-        aspect = nothing,
-        title = "V")
-
-    hidexdecorations!(axV)
-
-    hlines!(axV, [0.], color = :white)
-    lines!(x, v)
-
-    axD = Axis(fig[3,1],
-        aspect = nothing,
-        yreversed = true,
-        title = "Δ")
-
-    lines!(x, d)
-
-    [rowsize!(fig.layout, i, Aspect(1, 0.3)) for i = 1:3]
-    resize_to_layout!(fig)
-
-    fig
+for i = 0:.1:25
+    dfac[] = i
+    sleep(1e-3)
 end

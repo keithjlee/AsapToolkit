@@ -1,97 +1,234 @@
-#### LINE - free free
 export MLine_freefree
+"""
+    MLine_freefree(w, L::T, x::T) where T <: Real
+
+Simply supported internal moment at `x` given distributed load `w` on beam of length `L`
+"""
 function MLine_freefree(w, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w * x / 2 * (L - x)
 end
 
 export VLine_freefree
+"""
+    VLine_freefree(w, L::T, x::T) where T <: Real
+
+Simply supported internal shear at `x` given distributed load `w` on beam of length `L`
+"""
 function VLine_freefree(w::T, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w * (L / 2 - x)
 end
 
 export DLine_freefree
+"""
+    DLine_freefree(w, L::T, x::T) where T <: Real
+
+Simply supported transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DLine_freefree(w::T, L::T, x::T, E::T, I::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w * x / 24 / E / I * (L^3 - 2L*x^2 + x^3)
 end
 
 export ThetaLine_freefree
+"""
+    ThetaLine_freefree(w, L::T, x::T) where T <: Real
+
+Simply supported rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaLine_freefree(w::T, L::T, x::T, E::T, I::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w/24/E/I * (L^3 - 6L * x^2 + 4x^3)
 end
 
-#### LINE - fixed fixed
 export MLine_fixedfixed
+"""
+    MLine_fixedfixed(w, L::T, x::T) where T <: Real
+
+Fixed-fixed internal moment at `x` given distributed load `w` on beam of length `L`
+"""
 function MLine_fixedfixed(w::T, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w / 12 * (6 * L * x - L^2 - 6 * x^2)
 end
 
 export VLine_fixedfixed
+"""
+    VLine_fixedfixed(w, L::T, x::T) where T <: Real
+
+Simply supported internal shear at `x` given distributed load `w` on beam of length `L`
+"""
 function VLine_fixedfixed(w::T, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w * (L / 2 - x)
 end
 
 export DLine_fixedfixed
+"""
+    DLine_fixedfixed(w, L::T, x::T) where T <: Real
+
+Simply supported transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DLine_fixedfixed(w::T, L::T, x::T, E::T, I::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w * x ^ 2 / 24 / E / I * (L - x)^2
 end
 
 export ThetaLine_fixedfixed
+"""
+    ThetaLine_fixedfixed(w, L::T, x::T) where T <: Real
+
+Simply supported rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaLine_fixedfixed(w::T, L::T, x::T, E::T, I::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     w/24/E/I * (L^2 * x^2 - 2L*x^3 +x^4)
 end
 
-
-#### LINE - free fixed
 export MLine_freefixed
+"""
+    MLine_freefixed(w, L::T, x::T) where T <: Real
+
+Free-fixed internal moment at `x` given distributed load `w` on beam of length `L`
+"""
 function MLine_freefixed(w::T, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     R1 = 3 * w * L / 8
 
     R1 * x - w * x^2 / 2
 end
 
 export VLine_freefixed
+"""
+    VLine_freefixed(w, L::T, x::T) where T <: Real
+
+Free-fixed internal shear at `x` given distributed load `w` on beam of length `L`
+"""
 function VLine_freefixed(w::T, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
     R1 = 3 * w * L / 8
 
     R1 - w * x
 end
 
 export DLine_freefixed
+"""
+    DLine_freefixed(w, L::T, x::T) where T <: Real
+
+Free-fixed transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DLine_freefixed(w::T, L::T, x::T, E::T, I::T) where T <: Real
+    @assert 0 ≤ x ≤ L
     w * x / 48 / E / I * (L^3 - 3L * x^2 + 2x^3)
 end
 
 export ThetaLine_freefixed
+"""
+    ThetaLine_freefixed(w, L::T, x::T) where T <: Real
+
+Free-fixed rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaLine_freefixed(w::T, L::T, x::T, E::T, I::T) where T <: Real
+    @assert 0 ≤ x ≤ L
     w/48/E/I * (L^3 - 9L*x^2 + 8x^3)
 end
 
 ### LINE - fixed free
 
 export MLine_fixedfree
+"""
+    MLine_fixedfree(w, L::T, x::T) where T <: Real
+
+Fixed-free internal moment at `x` given distributed load `w` on beam of length `L`
+"""
 function MLine_fixedfree(w::T, L::T, x::T) where T <: Real
-    -MLine_freefixed(w, L, L-x)
+    MLine_freefixed(w, L, L-x)
 end
 
 export VLine_fixedfree
+"""
+    VLine_fixedfree(w, L::T, x::T) where T <: Real
+
+Fixed-free internal shear at `x` given distributed load `w` on beam of length `L`
+"""
 function VLine_fixedfree(w::T, L::T, x::T) where T <: Real
     -VLine_freefixed(w, L, L-x)
 end
 
 export DLine_fixedfree
+"""
+    DLine_fixedfree(w, L::T, x::T) where T <: Real
+
+Fixed-free transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DLine_fixedfree(w::T, L::T, x::T, E::T, I::T) where T <: Real
     DLine_freefixed(w, L, L-x, E, I)
 end
 
 export ThetaLine_fixedfree
+"""
+    ThetaLine_fixedfree(w, L::T, x::T) where T <: Real
+
+Fixed-free rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaLine_fixedfree(w::T, L::T, x::T, E::T, I::T) where T <: Real
-    # w/48/E/I * (L^3 * x * (L - x) - 3L * (L^2 -4L*x + 3x^2 - 6 * (L-x)^2))
     -ThetaLine_freefixed(w, L, (L-x), E, I)
 end
 
 #### POINT - freefree
 export MPoint_freefree
+"""
+    MPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Simply supported internal moment at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function MPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
     a = frac * L
     b = L - a
 
@@ -99,7 +236,15 @@ function MPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
 end
 
 export VPoint_freefree
+"""
+    VPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Simply supported internal shear at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function VPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
     a = frac * L
     b = L - a
 
@@ -107,7 +252,20 @@ function VPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
 end
 
 export DPoint_freefree
+"""
+    DPoint_freefree(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Simply supported transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DPoint_freefree(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
     a = frac * L
     b = L - a
 
@@ -119,7 +277,20 @@ function DPoint_freefree(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <:
 end
 
 export ThetaPoint_freefree
+"""
+    ThetaPoint_freefree(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Simply supported rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaPoint_freefree(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+
     a = frac * L
     b = L - a
 
@@ -131,7 +302,15 @@ function ThetaPoint_freefree(P::T, L::T, x::T, frac::Float64, E::T, I::T) where 
 end
 
 export MPoint_fixedfixed
+"""
+    MPoint_fixedfixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Fixed-fixed internal moment at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function MPoint_fixedfixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
     a = frac * L
     b = L - a
 
@@ -146,7 +325,15 @@ function MPoint_fixedfixed(P::T, L::T, x::T, frac::Float64) where T <: Real
 end
 
 export VPoint_fixedfixed
+"""
+    VPoint_fixedfixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Fixed-fixed internal shear at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function VPoint_fixedfixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
     a = frac * L
     b = L - a
 
@@ -154,7 +341,20 @@ function VPoint_fixedfixed(P::T, L::T, x::T, frac::Float64) where T <: Real
 end
 
 export DPoint_fixedfixed
+"""
+    DPoint_fixedfixed(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Fixed-fixed transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DPoint_fixedfixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
     a = frac * L
     b = L - a
 
@@ -167,7 +367,20 @@ function DPoint_fixedfixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T 
 end
 
 export ThetaPoint_fixedfixed
+"""
+    ThetaPoint_fixedfixed(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Fixed-fixed rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaPoint_fixedfixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+
     a = frac * L
     b = L - a
 
@@ -180,7 +393,15 @@ function ThetaPoint_fixedfixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) wher
 end
 
 export MPoint_freefixed
+"""
+    MPoint_freefixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Free-fixed internal moment at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function MPoint_freefixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+
     a = frac * L
     b = L - a
 
@@ -195,12 +416,25 @@ function MPoint_freefixed(P::T, L::T, x::T, frac::Float64) where T <: Real
 end
 
 export MPoint_fixedfree
+"""
+    MPoint_fixedfree(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Fixed-free internal moment at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function MPoint_fixedfree(P::T, L::T, x::T, frac::Float64) where T <: Real
-    - MPoint_freefixed(P, L, (L-x), 1-frac)
+    MPoint_freefixed(P, L, (L-x), 1-frac)
 end
 
 export VPoint_freefixed
+"""
+    VPoint_freefixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Free-fixed internal shear at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function VPoint_freefixed(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+
     a = frac * L
     b = L - a
 
@@ -211,12 +445,29 @@ function VPoint_freefixed(P::T, L::T, x::T, frac::Float64) where T <: Real
 end
 
 export VPoint_fixedfree
+"""
+    VPoint_fixedfree(P::T, L::T, x::T, frac::Float64) where T <: Real
+
+Fixed-free internal shear at `x` given point load `P` on beam length `L` at a point `frac × L`
+"""
 function VPoint_fixedfree(P::T, L::T, x::T, frac::Float64) where T <: Real
     - VPoint_freefixed(P, L, (L-x), 1-frac)
 end
 
 export DPoint_freefixed
+"""
+    DPoint_freefixed(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Free-fixed transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DPoint_freefixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
     a = frac * L
     b = L - a
 
@@ -229,12 +480,33 @@ function DPoint_freefixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <
 end
 
 export DPoint_fixedfree
+"""
+    DPoint_fixedfree(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Fixed-free transverse displacement at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function DPoint_fixedfree(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
     DPoint_freefixed(P, L, (L-x), 1-frac, E, I)
 end
 
 export ThetaPoint_freefixed
+"""
+    ThetaPoint_freefixed(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Free-fixed rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaPoint_freefixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
     a = frac * L
     b = L - a
 
@@ -247,6 +519,16 @@ function ThetaPoint_freefixed(P::T, L::T, x::T, frac::Float64, E::T, I::T) where
 end
 
 export ThetaPoint_fixedfree
+"""
+    ThetaPoint_fixedfree(P::T, L::T, x::T, frac::Float64, E::T, I::T)) where T <: Real
+
+
+Fixed-free rotation at `x` given:
+- Distributed load `w`
+- Beam length `L`
+- Young's Modulus `E`
+- Moment of Inertia `I`
+"""
 function ThetaPoint_fixedfree(P::T, L::T, x::T, frac::Float64, E::T, I::T) where T <: Real
     -ThetaPoint_freefixed(P, L, (L-x), 1-frac, E, I)
 end
