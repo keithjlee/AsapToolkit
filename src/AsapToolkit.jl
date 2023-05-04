@@ -7,6 +7,7 @@ using Reexport
 include("Generation/FrameGenerator.jl")
 export generateFrame
 
+include("ForceAnalysis/forceFunctions.jl")
 include("ForceAnalysis/ForceAnalysis.jl")
 
 end # module AsapToolkit
