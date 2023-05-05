@@ -1,74 +1,71 @@
 using DifferentialEquations
 
 #differential eq. solution
-p = rand(model.elements[:primary])
-uends = uImag[[2, 6, 8, 12]]
-xfine = range(0, p.length, 200)
-ushapefunc = vcat([Asap.N(x, p.length) * uends for x in xfine]...)
+begin
+    n1 = Node([0., 0., 0.], :pinned)
+    n2 = Node([8000., 0., 0.], :fixed)
 
-klocal = Asap.localK(p)
-uImag = [[0., 100., 0., 0., 0., deg2rad(20)]; zeros(6)]
-fImag = klocal * uImag
+    p = Element(n1, n2, joist)
+    # p.Ψ = 0.
 
-v, m = fImag[[2, 6]]
-EI = p.section.E * p.section.Izz
+    l = LineLoad(p, [0., 20., -20.])
 
-function ddu(u′, u, p, t)
-    1 / EI * (v * t - m)
+    nodes = [n1, n2]; elements = [p]; loads = [l]
+
+    model = Model(nodes, elements, loads)
+    solve!(model)
+
+    n = 20
+    xlocal = first(p.LCS)
+    init = p.nodeStart.position
+
+    u = AsapToolkit.dofdisplacement(p; n = n)
+    inc = range(0, p.length, n)
+    df = Observable(10.)
+
+    xyz = @lift(Point3.(eachcol(hcat([init .+ xlocal .* i .- $df .* sum(disp .* p.LCS) for (i, disp) in zip(inc, eachcol(u))]...))))
+
+    undisp = Point3.([p.nodeStart.position, p.nodeEnd.position])
 end
-
-ndiscrete = 200
-θₒ = uImag[6]
-uₒ = uImag[2]
-tspan = (0., p.length)
-prob = SecondOrderODEProblem(ddu, θₒ, uₒ, tspan)
-
-xset = Vector{Vector{Float64}}()
-uset = Vector{Vector{Float64}}()
-nset = Vector{Int64}()
-
-for ndiscrete = 5:200
-
-    push!(nset, ndiscrete)
-    @time sol = DifferentialEquations.solve(prob, DPRKN6(); tstops = range(0, p.length, ndiscrete))
-
-    u = getindex.(sol.u, 2)
-    xrange = range(tspan..., length(u))
-
-    push!(uset, u)
-    push!(xset, collect(xrange))
-
-end
-
-i = Observable(1)
-
-
-nsol = @lift("ODE solution at " * string(nset[$i]) * " discretizations")
-xusol = @lift(Point2.(xset[$i], uset[$i]))
-
 begin
     lw = 5
     fig = Figure(backgroundcolor = :black)
-    ax = Axis(fig[1,1], aspect = 1,
-        xlabel = "local x [mm]",
-        title = nsol,
-        ylabel = "Δ [mm]")
+    ax = Axis3(fig[1,1], 
+        aspect = :data,
+        # aspect = (1,1,1)
+        )
 
-    lines!(xfine, ushapefunc,
+    # hidedecorations!(ax)
+    simplifyspines!(ax)
+
+    linesegments!(undisp,
+    color = :white,
+    linestyle = :dash)
+
+    lines!(xyz,
         linewidth = lw,
-        color = blue,
-        label = "Hermitian shape function 3rd order")
+        color = :white)
 
-    lines!(xusol,
-            linewidth = lw,
-            color = :white,
-            label = "ODE Sol.")
+    on(df) do _ reset_limits!(ax) end
 
-    axislegend(ax, position = :lb)
     fig
 end
 
-for k = 1:length(nset)
-    i[] = k
-    sleep(.1)
+for i = 1:100
+    df[] = i
+    sleep(1e-3)
 end
+
+uglobal = [p.nodeStart.displacement; p.nodeEnd.displacement]
+ulocal = p.R * uglobal
+L = p.length
+
+xrange = range(0, L, n)
+
+uX = ulocal[[1, 7]]
+uY = ulocal[[2,6,8,12]]
+uZ = ulocal[[3,5,9,11]]
+
+hcat([AsapToolkit.Naxial(x, L) * uX for x in xrange]...)
+hcat([AsapToolkit.N(x, L) * uY for x in xrange]...)
+hcat([AsapToolkit.N(x,L) * uZ for x in xrange]...)

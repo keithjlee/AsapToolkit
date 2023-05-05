@@ -42,7 +42,8 @@ begin
         girder,
         joist,
         tube;
-        # columnPsi = pi/2,
+        # joistPsi = 0,
+        columnPsi = pi/2,
         joistRelease = :joist,
         primaryRelease = :fixedfixed);
 
@@ -186,9 +187,9 @@ begin
 end
 ##### truss
 begin
-    n = 31
-    dx = 2000
-    dy = 3000
+    n = 25
+    dx = 3000
+    dy = 6000
     section = toASAPframe(rand(allW()), mat.E, mat.G)
 end
 
@@ -219,7 +220,8 @@ begin
     e2 = linesegments!(dels,
         color = axf,
         colorrange = cr,
-        linewidth = lw,
+        # linewidth = lw,
+        linewidth = 10,
         colormap = pink2blue)
 
     on(dfac) do _
@@ -229,7 +231,7 @@ begin
     fig
 end
 
-for i = 0:.1:25
+for i = 0:.1:500
     dfac[] = i
     sleep(1e-3)
 end
