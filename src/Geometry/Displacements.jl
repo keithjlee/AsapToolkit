@@ -66,7 +66,7 @@ function unodal(element::Element; n::Integer = 20)
 end
 
 """
-Accumlate the internal forces cause by a given load to the current element
+Accumlate the internal forces cause by a line load to an element
 """
 function accumulatedisp!(
     load::LineLoad, 
@@ -92,6 +92,9 @@ function accumulatedisp!(
     Dz .-= dfunction.(wz, L, xvals, E, Iweak)
 end
 
+"""
+Accumlate the internal forces cause by a point load to an element
+"""
 function accumulatedisp!(
     load::PointLoad, 
     xvals::Vector{Float64}, 
@@ -116,6 +119,11 @@ function accumulatedisp!(
     Dz .-= dfunction.(pz, L, xvals, frac, E, Iweak)
 end
 
+"""
+    ulocal(element::Element, model::Model; resolution = 20)
+
+Get the [3 × resolution] matrix of xyz displacements in LCS
+"""
 function ulocal(element::Element, model::Model; resolution = 20)
 
     L = element.length
@@ -131,6 +139,11 @@ function ulocal(element::Element, model::Model; resolution = 20)
     return D
 end
 
+"""
+    uglobal(element::Element, model::Model; resolution = 20)
+
+Get the [3 × resolution] matrix of xyz displacements in GCS
+"""
 function uglobal(element::Element, model::Model; resolution = 20)
 
     L = element.length
@@ -217,4 +230,25 @@ function ElementDisplacements(elements::Vector{<:Asap.FrameElement}, model::Mode
     end
 
     return ElementDisplacements(elements[1], resolution, xstore, hcat(ulocalstore...), hcat(uglobalstore...), hcat(basepointstore...))
+end
+
+"""
+    displacements(model::Model, increment::Real)
+
+Get the displacements of all elements in a model
+"""
+function displacements(model::Model, increment::Real)
+    results = Vector{ElementDisplacements}()
+
+    ids = groupbyid(model.elements)
+
+    for id in ids
+        elements = model.elements[id]
+        L = sum(getproperty.(elements, :length))
+        n = max(Int(round(L/increment)), 2)
+
+        push!(results, ElementDisplacements(elements, model))
+    end
+
+    return results
 end

@@ -233,11 +233,11 @@ end
 
 
 """
-    forceanalysis(model::Model, increment::Real)
+    forces(model::Model, increment::Real)
 
-Get a vector of element internal force results every `increment`
+Get the internal forces of all elements in a model
 """
-function forceanalysis(model::Model, increment::Real)
+function forces(model::Model, increment::Real)
 
     results = Vector{InternalForces}()
 

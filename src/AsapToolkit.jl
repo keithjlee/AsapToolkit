@@ -13,9 +13,10 @@ include("ForceAnalysis/Translations.jl")
 include("ForceAnalysis/ForceAnalysis.jl")
 export groupbyid
 export InternalForces
-export forceanalysis
+export forces
 
 include("Geometry/Displacements.jl")
 export ElementDisplacements
+export displacements
 
 end # module AsapToolkit
