@@ -24,8 +24,8 @@ end
 begin
     begin
         nx = 8
-        ny = 16
-        nz = 2
+        ny = 5
+        nz = 5
         dx = 3200
         dy = 5000
         dz = 3500
@@ -44,7 +44,7 @@ begin
         tube;
         # joistPsi = 0,
         columnPsi = pi/2,
-        joistRelease = :joist,
+        # joistRelease = :joist,
         primaryRelease = :fixedfixed);
 
     model = frame.model;
@@ -63,7 +63,7 @@ end
 begin
     windX = [LineLoad(j, [10., 0., 0.]) for j in model.elements[ixj]]
     windY = [LineLoad(j, [0., 10., 0.]) for j in model.elements[iyp]]
-    @time solve!(model, windY);
+    @time solve!(model, [loads; windY]);
 
     moms = vcat([e.forces[[6,12]] for e in model.elements]...)
     momrange = maximum(abs.(moms)) .* (-1,1)
@@ -110,7 +110,7 @@ begin
         linewidth = .2)
 
     e_simp = linesegments!(E2simple,
-        color = axf2,
+        color = axf,
         colorrange = cr,
         colormap = pink2blue,
         linewidth = lw,
@@ -146,7 +146,72 @@ begin
 
 end
 
+begin
+    ichecked = Vector{Int64}()
+    inds = Vector{Vector{Int64}}()
+    eids = getproperty.(model.elements[:column], :elementID)
+    for e in model.elements[:column]
+        id = e.elementID
+
+        in(id, ichecked) && continue
+
+        igroup = findall(eids .== id)
+
+        push!(inds, igroup)
+        push!(ichecked, id)
+    end
+end
+begin
+    res = internalforces(j, model)
+
+    results = [internalforces((model.elements[:column])[id], model) for id in inds]
+
+    xvals = getproperty.(results, :x)
+    myvals = getproperty.(results, :My)
+    vyvals = getproperty.(results, :Vy)
+    mzvals = getproperty.(results, :Mz)
+    vzvals = getproperty.(results, :Vz)
+
+    begin
+        fig = Figure(backgroundcolor = :black)
+        axM = Axis(fig[1,1],
+            yreversed = true,
+            aspect = nothing)
+
+        axV = Axis(fig[2,1],
+            aspect = nothing)
+
+        axMz = Axis(fig[1,2],
+            yreversed = true,
+            aspect = nothing)
+
+        axVz = Axis(fig[2,2],
+            aspect = nothing)
+
+        hlines!.((axM, axV, axMz, axVz), [0.], color = :white)
+
+        lines!.(axM, xvals, myvals,
+            color = (blue, 0.5),
+            linewidth = 4)
+
+        lines!.(axV, xvals, vyvals,
+            color = (green, 0.5),
+            linewidth = 4)
+
+        lines!.(axMz, xvals, mzvals,
+            color = (blue, 0.5),
+            linewidth = 4)
+
+        lines!.(axVz, xvals, vzvals,
+            color = (green, 0.5),
+            linewidth = 4)
+
+        fig
+    end
+end
+
 ## rapid sampling
+
 nxrange = collect(3:8)
 nyrange = collect(3:10)
 nzrange = collect(1:30)

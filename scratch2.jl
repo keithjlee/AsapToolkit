@@ -1,123 +1,212 @@
 begin
-    n1 = Node([0., 0., 0.], :pinned)
-    n1b = Node([4000., 0., 0.], :free)
-    n2 = Node([8000., 0., 0.], :fixed)
+    
+    # n1 = Node([0., 0., 0.], :pinned)
+    # n2 = Node([7500., 1000., 0.], :pinned)
 
-    p1 = Element(n1, n1b, girder)
-    p2 = Element(n1b, n2, girder)
-    # p.Ψ = 0.
+    # n3 = Node([-500., 400., 500.], n1.dof)
+    # n4 = Node([0., 6500., 3000.], n2.dof)
 
-    l1 = LineLoad(p1, [0., 0., -20.])
-    l2 = LineLoad(p2, [0., 0., -20.])
-    l3 = PointLoad(p1, .1, [0., 0., -30e3])
-    l4 = PointLoad(p2, 0.5, [0., 0., 50e3])
-    l5 = PointLoad(p2, 0.7, [0., 0., -75e3])
+    n1 = Node([0., 0., 0.], :fixed)
+    n2 = Node([0., 7500., 0.], :fixed)
 
-    nodes = [n1, n1b, n2]; elements = [p1, p2]; loads = [l1, l2, l3, l4, l5]
+    n3 = Node([5000., 0., 0.], n1.dof)
+    n4 = Node([5000., 7500., 0.], n2.dof)
+
+    nodes = [n1, n2, n3, n4]
+
+    e1 = Element(n1, n2, girder)
+    e2 = Element(n3, n4, girder)
+
+    joists = [BridgeElement(e1, x, e2, x, joist, :fixedfree) for x in range(0, 1, 10)[2:end-1]]
+
+    for el in joists el.id = :joist; end
+
+    elements = [e1, e2, joists...]
+
+    loads = [LineLoad(j, [0., 0., -10]) for j in joists]
 
     model = Model(nodes, elements, loads)
     solve!(model)
 
-    df = Observable(1000.)
-
-    xyz1 = @lift(Point3.(eachcol(displacedshape(p1; n = n, factor = $df))))
-    xyz2 = @lift(Point3.(eachcol(displacedshape(p2; n = n, factor = $df))))
-
-    undisp = Point3.([endpoints(p1); endpoints(p2)])
 end
+
+
+ploads = [NodeForce(n, [-5e3, 0., 45e3]) for n in model.nodes[5:12]]
+ploads2 = [NodeForce(n, [2.5e3, 0., 0.]) for n in model.nodes[13:20]]
+ploads3 = [PointLoad(j, rand(), [0., 0., -20e3]) for j in model.elements[:joist]]
+combined = [ploads; model.loads; ploads2; ploads3]
+solve!(model, combined)
+
+# for j in model.elements[:joist] j.release = :fixedfixed end
+
+begin
+    dfac = Observable(100.)
+    resolution = 20
+
+    n_ud = Point3.(getproperty.(model.nodes, :position))
+    e_ud = vcat([n_ud[e.nodeIDs] for e in model.elements]...)
+
+    n_d = @lift(n_ud .+ $dfac * [n.displacement[1:3] for n in model.nodes])
+
+    e_d = [@lift(displacedshape(e; factor = $dfac, n = resolution)) for e in model.elements]
+
+    mids = Point3.(vcat([repeat([midpoint(e)], 3) for e in model.elements[:joist]]...))
+    lcs = 500 .* Vec3.(vcat(getproperty.(model.elements[:joist], :LCS)...))
+    cols = repeat([pink, blue, green], length(model.elements[:joist]))
+
+    begin
+        fig = Figure(backgroundcolor = :black, resolution = (2000,2000))
+        ax = Axis3(fig[1,1],
+            aspect = :data,
+            zlabeloffset = 100,
+            protrusions = 200)
+
+        labelscale!(ax, 2)
+
+        ud = linesegments!(e_ud,
+            color = :white,
+            linestyle = :dash)
+
+        l = arrows!(mids, lcs,
+            color = cols,
+            linewidth = 50,
+            arrowsize = 75)
+
+        d = [lines!(ed,
+            color = :white,
+            linewidth = 3) for ed in e_d]
+
+        tt = GLMakie.text!(n_ud, text = string.(getproperty.(model.nodes, :nodeID)),
+            fontsize = 40)
+
+        on(dfac) do _
+            reset_limits!(ax)
+        end
+
+        fig
+    end
+end
+
+j = rand(model.elements)
+
+res = internalforces(j, model)
+
+results = [internalforces(e, model) for e in model.elements]
+
+#find shattered elements
+ichecked = Vector{Int64}()
+inds = Vector{Vector{Int64}}()
+eids = getproperty.(model.elements, :elementID)
+for e in model.elements
+    id = e.elementID
+
+    in(id, ichecked) && continue
+
+    igroup = findall(eids .== id)
+
+    push!(inds, igroup)
+    push!(ichecked, id)
+end
+
+results = [internalforces(model.elements[id], model) for id in inds]
+
+xvals = getproperty.(results, :x)
+myvals = getproperty.(results, :My)
+vyvals = getproperty.(results, :Vy)
+mzvals = getproperty.(results, :Mz)
+vzvals = getproperty.(results, :Vz)
 
 begin
     fig = Figure(backgroundcolor = :black)
-    ax = Axis3(fig[1,1],
-        aspect = :data)
+    axM = Axis(fig[1,1],
+        yreversed = true,
+        aspect = nothing)
 
-    simplifyspines!(ax)
+    axV = Axis(fig[2,1],
+        aspect = nothing)
 
-    ud = lines!(undisp,
-        color = :white,
-        linestyle = :dash)
+    axMz = Axis(fig[1,2],
+        yreversed = true,
+        aspect = nothing)
 
-    lines!(xyz1, color = :white, linewidth = 3)
-    lines!(xyz2, color = :white, linewidth = 3)
+    axVz = Axis(fig[2,2],
+        aspect = nothing)
 
-    on(df) do _ reset_limits!(ax) end
+    hlines!.((axM, axV, axMz, axVz), [0.], color = :white)
+
+    lines!.(axM, xvals, myvals,
+        color = (blue, 0.5),
+        linewidth = 4)
+
+    lines!.(axV, xvals, vyvals,
+        color = (green, 0.5),
+        linewidth = 4)
+
+    lines!.(axMz, xvals, mzvals,
+        color = (blue, 0.5),
+        linewidth = 4)
+
+    lines!.(axVz, xvals, vzvals,
+        color = (green, 0.5),
+        linewidth = 4)
 
     fig
 end
 
-resolution = 100
 
-disp_dof_LCS = Asap.localdisplacements(p2; n= resolution)
-uglobal = [p1.nodeStart.displacement; p1.nodeEnd.displacement]
-force_dof_LCS = p1.R * (p1.K * uglobal + p.Q)
-Fy = force_dof_LCS[2]
-My = force_dof_LCS[6]
+#beam information
+element = rand(model.elements[:joist])
+release = element.release
+L = element.length
 
-V_dof = Fy
-M_dof = Fy * xincs .- My
+#discretization
+xinc = collect(range(0, L, resolution))
 
-# DISPLACEMENT FROM LOAD
-loads_on_e = model.loads[p2.loadIDs]
+#end node information
+uglobal = [element.nodeStart.displacement; element.nodeEnd.displacement]
 
-load = loads_on_e[1]
+# end forces that are relevant to the given element/release condition
+Flocal = (element.R * element.K * uglobal) .* release2DOF[release]
 
-Mlocaly = zeros(resolution)
-Vlocaly = zeros(resolution)
-Dlocaly = zeros(resolution)
+# shear/moment acting at the *starting* point of an element in LCS
+Vystart, Mystart, Vzstart, Mzstart = Flocal[[2, 6, 3, 5]] .* [1, 1, 1, -1]
 
-for load in loads_on_e
-    plocal = p.R[1:3,1:3] * load.value
-    w_localy = -plocal[2]
-    w_localz = -plocal[3]
+# initialize internal force vectors
+My = Vystart .* xinc .- Mystart
+Vy = zero(My) .+ Vystart
+Mz = Vzstart .* xinc .- Mzstart
+Vz = zero(Mz) .+ Vzstart
 
-    xincs = range(0, p.length, resolution)
+# accumulate loads
+for load in model.loads[element.loadIDs]
+    AsapToolkit.accumulate!(load,
+        xinc,
+        My,
+        Vy,
+        Mz,
+        Vz)  
+end
 
-    p.release = :fixedfixed
-    mfunction = MfuncDict[typeof(load), p.release]
-    try
-        Mlocaly += mfunction.(w_localy, p.length, xincs)
-    catch
-        Mlocaly += mfunction.(w_localy, p.length, xincs, load.position)
-    end
-
-    vfunction = VfuncDict[typeof(load), p.release]
+begin
+    begin
+        fig = Figure(backgroundcolor = :black)
+        axM = Axis(fig[1,1],
+            yreversed = true,
+            aspect = nothing)
     
-    try
-        Vlocaly += vfunction.(w_localy, p.length, xincs)
-    catch
-        Vlocaly += vfunction.(w_localy, p.length, xincs, load.position)
-    end
-
-    dfunction = DfuncDict[typeof(load), p.release]
-
-    try
-        Dlocaly += -dfunction.(w_localy, p.length, xincs, p.section.E, p.section.Izz)
-    catch
-        Dlocaly += -dfunction.(w_localy, p.length, xincs, load.position, p.section.E, p.section.Izz)
-
+        axV = Axis(fig[2,1],
+            aspect = nothing)
+    
+        hlines!.((axM, axV), [0.], color = :white)
+    
+        lines!(axM, xinc, Mz,
+            color = blue,
+            linewidth = 4)
+    
+        lines!(axV, xinc, Vz,
+            color = green,
+            linewidth = 4)
+    
+        fig
     end
 end
-
-begin
-    fig = Figure(backgroundcolor = :black)
-
-    axM = Axis(fig[1,1], yreversed = true, aspect = nothing)
-
-    lines!(xincs, Mlocaly)
-
-    axV = Axis(fig[2,1], aspect = nothing)
-
-    lines!(xincs, Vlocaly)
-
-    axD = Axis(fig[3,1], aspect = nothing)
-
-    lines!(xincs, Dlocaly)
-
-
-    hlines!.((axM, axV, axD), [0.], color = :white)
-
-    fig
-end
-
-
-unodal = model.S[model.freeDOFs, model.freeDOFs] \ model.P[model.freeDOFs]
