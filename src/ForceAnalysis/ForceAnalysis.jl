@@ -253,3 +253,78 @@ function forces(model::Model, increment::Real)
 
     return results
 end
+
+struct ForceEnvelopes
+    element::Element
+    resolution::Integer
+    x::Vector{Float64}
+    Plow::Vector{Float64}
+    Phigh::Vector{Float64}
+    Mylow::Vector{Float64}
+    Myhigh::Vector{Float64}
+    Vylow::Vector{Float64}
+    Vyhigh::Vector{Float64}
+    Mzlow::Vector{Float64}
+    Mzhigh::Vector{Float64}
+    Vzlow::Vector{Float64}
+    Vzhigh::Vector{Float64}
+end
+
+"""
+    loadenvelopes(model::Model, loads::Vector{Vector{<:Load}})
+
+Get the high/low internal forces for a series of external loads
+"""
+function loadenvelopes(model::Model, loads::Vector{Vector{<:Asap.Load}}, increment::Real)
+    #
+    envelopes = Vector{ForceEnvelopes}()
+
+    #collector of force results
+    forceresults = Vector{Vector{InternalForces}}()
+
+    # perform analysis
+    for load in loads
+        solve!(model, load)
+        push!(forceresults, forces(model, increment))
+    end
+
+    # number of actual elements
+    n = length(first(forceresults))
+
+    # for each element
+    for i = 1:n
+        e = first(forceresults)[i].element
+        res = first(forceresults)[i].resolution
+        x = first(forceresults)[i].x
+
+        P = hcat(getproperty.(getindex.(forceresults, i), :P)...)
+        My = hcat(getproperty.(getindex.(forceresults, i), :My)...)
+        Vy = hcat(getproperty.(getindex.(forceresults, i), :Vy)...)
+        Mz = hcat(getproperty.(getindex.(forceresults, i), :Mz)...)
+        Vz = hcat(getproperty.(getindex.(forceresults, i), :Vz)...)
+
+        Prange = extrema.(eachrow(P))
+        Myrange = extrema.(eachrow(My))
+        Vyrange = extrema.(eachrow(Vy))
+        Mzrange = extrema.(eachrow(Mz))
+        Vzrange = extrema.(eachrow(Vz))
+
+        envelope = ForceEnvelopes(e,
+            res,
+            x,
+            getindex.(Prange, 1),
+            getindex.(Prange, 2),
+            getindex.(Myrange, 1),
+            getindex.(Myrange, 2),
+            getindex.(Vyrange, 1),
+            getindex.(Vyrange, 2),
+            getindex.(Mzrange, 1),
+            getindex.(Mzrange, 2),
+            getindex.(Vzrange, 1),
+            getindex.(Vzrange, 2))
+
+        push!(envelopes, envelope)
+    end
+
+    return envelopes
+end

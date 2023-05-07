@@ -14,6 +14,7 @@ include("ForceAnalysis/ForceAnalysis.jl")
 export groupbyid
 export InternalForces
 export forces
+export loadenvelopes
 
 include("Geometry/Displacements.jl")
 export ElementDisplacements

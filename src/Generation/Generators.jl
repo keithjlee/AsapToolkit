@@ -43,7 +43,9 @@ Required inputs:
 - `joistSection::Section` Section of secondary beams
 - `braceSection::Section` Section for lateral bracing
 
-Default inputs:
+Optional inputs:
+- `diaphragm::Bool = false` Include floor diaphragm (as X braces between columns)
+- `diaphragmSection::Section = nothing` Element section for diaphragm members (defaults to braceSection)
 - `columnRelease::Symbol = :fixedfixed` DOF end release for column elements
 - `primaryRelease::Symbol = :fixedfixed` DOF end release for primary elements
 - `joistRelease::Symbol = :joist` DOF end release for joist elements
