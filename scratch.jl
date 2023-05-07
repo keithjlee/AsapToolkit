@@ -62,8 +62,8 @@ end
 
 begin
     windX = [LineLoad(j, [10., 0., 0.]) for j in model.elements[ixj]]
-    windY = [LineLoad(j, [0., 10., 0.]) for j in model.elements[iyp]]
-    @time solve!(model, [loads; windY]);
+    windY = [LineLoad(j, [0., 5., 0.]) for j in model.elements[iyp]]
+    # @time solve!(model, [loads; windY]);
 
     moms = vcat([e.forces[[6,12]] for e in model.elements]...)
     momrange = maximum(abs.(moms)) .* (-1,1)
@@ -146,11 +146,12 @@ begin
 
 end
 
+i = :primary
 begin
     ichecked = Vector{Int64}()
     inds = Vector{Vector{Int64}}()
-    eids = getproperty.(model.elements[:column], :elementID)
-    for e in model.elements[:column]
+    eids = getproperty.(model.elements[i], :elementID)
+    for e in model.elements[i]
         id = e.elementID
 
         in(id, ichecked) && continue
@@ -162,11 +163,10 @@ begin
     end
 end
 begin
-    res = internalforces(j, model)
-
-    results = [internalforces((model.elements[:column])[id], model) for id in inds]
+    results = [InternalForces((model.elements[i])[id], model) for id in inds]
 
     xvals = getproperty.(results, :x)
+    pvals = getproperty.(results, :P)
     myvals = getproperty.(results, :My)
     vyvals = getproperty.(results, :Vy)
     mzvals = getproperty.(results, :Mz)
@@ -176,35 +176,48 @@ begin
         fig = Figure(backgroundcolor = :black)
         axM = Axis(fig[1,1],
             yreversed = true,
+            ylabel = "My [kNm]",
             aspect = nothing)
 
         axV = Axis(fig[2,1],
+            ylabel = "Vy [kN]",
             aspect = nothing)
 
         axMz = Axis(fig[1,2],
+            ylabel = "Mz [kNm]",
             yreversed = true,
             aspect = nothing)
 
         axVz = Axis(fig[2,2],
+            ylabel = "Vz [kN]",
             aspect = nothing)
 
         hlines!.((axM, axV, axMz, axVz), [0.], color = :white)
 
-        lines!.(axM, xvals, myvals,
+        lines!.(axM, xvals, myvals ./ 1e6,
             color = (blue, 0.5),
             linewidth = 4)
 
-        lines!.(axV, xvals, vyvals,
+        lines!.(axV, xvals, vyvals ./ 1e3,
             color = (green, 0.5),
             linewidth = 4)
 
-        lines!.(axMz, xvals, mzvals,
+        lines!.(axMz, xvals, mzvals ./ 1e6,
             color = (blue, 0.5),
             linewidth = 4)
 
-        lines!.(axVz, xvals, vzvals,
+        lines!.(axVz, xvals, vzvals ./ 1e3,
             color = (green, 0.5),
             linewidth = 4)
+
+        axP = Axis(fig[1:2, 3],
+            xlabel = "P [kN]",
+            aspect = nothing)
+
+        vlines!(axP, [0.], color = :white)
+
+        lines!.(axP,pvals ./ 1e3, xvals,
+            color = (pink, 0.5))
 
         fig
     end

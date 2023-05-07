@@ -1,10 +1,19 @@
+export PLine
+function PLine(w::T, L::T, x::T) where T <: Real
+    @assert 0 ≤ x ≤ L
+
+    R = - w * L / 2
+    # assumes start reaction is in line with local x
+    -(R + w * x)
+end
+
 export MLine_freefree
 """
     MLine_freefree(w, L::T, x::T) where T <: Real
 
 Simply supported internal moment at `x` given distributed load `w` on beam of length `L`
 """
-function MLine_freefree(w, L::T, x::T) where T <: Real
+function MLine_freefree(w::T, L::T, x::T) where T <: Real
     @assert 0 ≤ x ≤ L
 
     w * x / 2 * (L - x)
@@ -219,6 +228,17 @@ function ThetaLine_fixedfree(w::T, L::T, x::T, E::T, I::T) where T <: Real
 end
 
 #### POINT - freefree
+export PPoint
+function PPoint(P::T, L::T, x::T, frac::Float64) where T <: Real
+    @assert 0 ≤ frac ≤ 1.
+    @assert 0 ≤ x ≤ L
+    
+    a = frac * L
+    R = - P / 2
+
+    x < a ? -R : -(R + P)
+end
+
 export MPoint_freefree
 """
     MPoint_freefree(P::T, L::T, x::T, frac::Float64) where T <: Real
