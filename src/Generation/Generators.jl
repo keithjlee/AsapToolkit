@@ -64,6 +64,8 @@ function generateframe(nx::Integer,
         primarySection::Section,
         joistSection::Section,
         braceSection::Section;
+        diaphragm = false,
+        diaphragmSection = nothing,
         columnRelease = :fixedfixed,
         primaryRelease = :fixedfixed,
         joistRelease = :joist,
@@ -190,6 +192,25 @@ function generateframe(nx::Integer,
 
             brace1.id = brace2.id = :brace
             push!(braces, brace1, brace2)
+        end
+    end
+
+    ######
+    #diaphragm
+    if diaphragm
+
+        dsection = isnothing(diaphragmSection) ? braceSection : diaphragmSection
+
+        for k = 2:nz+1
+            for i = 1:nx
+                for j = 1:ny
+                    diaph1 = Element(nodes[i, j, k], nodes[i+1, j+1, k], dsection, :freefree)
+                    diaph2 = Element(nodes[i+1, j, k], nodes[i, j+1, k], dsection, :freefree)
+
+                    diaph1.id = diaph2.id = :diaphragm
+                    push!(braces, diaph1, diaph2)
+                end
+            end
         end
     end
 
