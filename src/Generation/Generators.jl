@@ -25,16 +25,6 @@ mutable struct Frame
     iExteriorYprimaries::Vector{Integer}
 end
 
-mutable struct Warren2D
-    model::TrussModel
-    n::Integer
-    dx::Real
-    dy::Real
-    section::Asap.AbstractSection
-    type::Symbol
-    base::Vector{<:Real}
-end
-
 """
     generateFrame(nx::Integer,...)
 
@@ -265,6 +255,16 @@ function generateframe(nx::Integer,
         iExteriorYprimary)
 
     return frame;
+end
+
+mutable struct Warren2D
+    model::TrussModel
+    n::Integer
+    dx::Real
+    dy::Real
+    section::Asap.AbstractSection
+    type::Symbol
+    base::Vector{<:Real}
 end
 
 """

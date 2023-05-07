@@ -1,7 +1,7 @@
 """
 Accumlate the internal forces cause by a given load to the current element
 """
-function accumulate!(load::LineLoad, 
+function accumulateforce!(load::LineLoad, 
     xvals::Vector{Float64}, 
     P::Vector{Float64},
     My::Vector{Float64}, 
@@ -32,7 +32,7 @@ end
 """
 Accumlate the internal forces cause by a given load to the current element
 """
-function accumulate!(load::PointLoad, 
+function accumulateforce!(load::PointLoad, 
     xvals::Vector{Float64}, 
     P::Vector{Float64},
     My::Vector{Float64}, 
@@ -77,7 +77,7 @@ end
 
 
 """
-Determine the distribution of internal transverse forces at n points along an element
+Internal force sampling for an element 
 """
 function InternalForces(element::Element, model::Model; resolution = 20)
     
@@ -106,7 +106,7 @@ function InternalForces(element::Element, model::Model; resolution = 20)
 
     # accumulate loads
     for load in model.loads[element.loadIDs]
-        accumulate!(load,
+        accumulateforce!(load,
             xinc,
             P,
             My,
@@ -118,6 +118,11 @@ function InternalForces(element::Element, model::Model; resolution = 20)
     return InternalForces(element, resolution, xinc, P, My, Vy, Mz, Vz)
 end
 
+"""
+    InternalForces(element::Element, loads::Vector{<:ElementLoad}; resolution = 20)
+
+Get internal force results for a given element from a set of loads
+"""
 function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; resolution = 20)
     
     #beam information
@@ -145,7 +150,7 @@ function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; res
 
     # accumulate loads
     for load in loads[element.loadIDs]
-        accumulate!(load,
+        accumulateforce!(load,
             xinc,
             P,
             My,
@@ -157,6 +162,11 @@ function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; res
     return InternalForces(element, resolution, xinc, P, My, Vy, Mz, Vz)
 end
 
+"""
+    InternalForces(element::Vector{<:FrameElement}, model::Model; resolution = 20)
+
+Get internal force results for a group of ordered elements that form a single physical element
+"""
 function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; resolution = 20)
     
     xstore = Vector{Float64}()
@@ -165,6 +175,8 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
     vystore = Vector{Float64}()
     mzstore = Vector{Float64}()
     vzstore = Vector{Float64}()
+
+    resolution = Int(round(resolution / length(elements)))
 
     #beam information
     for element in elements
@@ -192,7 +204,7 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
 
         # accumulate loads
         for load in model.loads[element.loadIDs]
-            accumulate!(load,
+            accumulateforce!(load,
                 xinc,
                 P,
                 My,
@@ -216,4 +228,28 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
     end
 
     return InternalForces(elements[1], resolution, xstore, pstore, mystore, vystore, mzstore, vzstore)
+end
+
+
+
+"""
+    forceanalysis(model::Model, increment::Real)
+
+Get a vector of element internal force results every `increment`
+"""
+function forceanalysis(model::Model, increment::Real)
+
+    results = Vector{InternalForces}()
+
+    ids = groupbyid(model.elements)
+
+    for id in ids
+        elements = model.elements[id]
+        L = sum(getproperty.(elements, :length))
+        n = max(Int(round(L / increment)), 2)
+
+        push!(results, InternalForces(elements, model; resolution = n))
+    end
+
+    return results
 end
