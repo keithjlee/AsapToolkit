@@ -31,10 +31,15 @@ begin
 end
 
 
-ploads = [NodeForce(n, [-5e3, 0., 45e3]) for n in model.nodes[5:12]]
-ploads2 = [NodeForce(n, [2.5e3, 0., 0.]) for n in model.nodes[13:20]]
-ploads3 = [PointLoad(j, rand(), [0., 0., -20e3]) for j in model.elements[:joist]]
-combined = [ploads; model.loads; ploads2; ploads3]
+jloads = [LineLoad(j, [0., 0., -15.]) for j in model.elements[:joist]]
+ploads1 = [NodeForce(n, [-5e3, 0., 45e3]) for n in model.nodes[5:12]]
+ploads2 = [PointLoad(j, rand(), [0., 0., -20e3]) for j in model.elements[:joist]]
+combined = [
+    jloads;
+    ploads1;
+    # ploads2;
+    ]
+
 solve!(model, combined)
 
 # for j in model.elements[:joist] j.release = :fixedfixed end
@@ -87,34 +92,31 @@ begin
     end
 end
 
-j = rand(model.elements)
-
-res = internalforces(j, model)
-
-results = [internalforces(e, model) for e in model.elements]
-
 #find shattered elements
-ichecked = Vector{Int64}()
-inds = Vector{Vector{Int64}}()
-eids = getproperty.(model.elements, :elementID)
-for e in model.elements
-    id = e.elementID
+begin
+    ichecked = Vector{Int64}()
+    inds = Vector{Vector{Int64}}()
+    eids = getproperty.(model.elements, :elementID)
+    for e in model.elements
+        id = e.elementID
 
-    in(id, ichecked) && continue
+        in(id, ichecked) && continue
 
-    igroup = findall(eids .== id)
+        igroup = findall(eids .== id)
 
-    push!(inds, igroup)
-    push!(ichecked, id)
+        push!(inds, igroup)
+        push!(ichecked, id)
+    end
+
+    results = [InternalForces(model.elements[id], model) for id in inds]
+
+    xvals = getproperty.(results, :x)
+    pvals = getproperty.(results, :P)
+    myvals = getproperty.(results, :My)
+    vyvals = getproperty.(results, :Vy)
+    mzvals = getproperty.(results, :Mz)
+    vzvals = getproperty.(results, :Vz)
 end
-
-results = [internalforces(model.elements[id], model) for id in inds]
-
-xvals = getproperty.(results, :x)
-myvals = getproperty.(results, :My)
-vyvals = getproperty.(results, :Vy)
-mzvals = getproperty.(results, :Mz)
-vzvals = getproperty.(results, :Vz)
 
 begin
     fig = Figure(backgroundcolor = :black)
