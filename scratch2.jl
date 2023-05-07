@@ -17,7 +17,7 @@ begin
     e1 = Element(n1, n2, girder)
     e2 = Element(n3, n4, girder)
 
-    joists = [BridgeElement(e1, x, e2, x, joist, :fixedfree) for x in range(0, 1, 10)[2:end-1]]
+    joists = [BridgeElement(e1, x, e2, x, joist, :joist) for x in range(0, 1, 10)[2:end-1]]
 
     for el in joists el.id = :joist; end
 
