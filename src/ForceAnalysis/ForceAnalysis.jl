@@ -275,7 +275,7 @@ end
 
 Get the high/low internal forces for a series of external loads
 """
-function loadenvelopes(model::Model, loads::Vector{Vector{<:Asap.Load}}, increment::Real)
+function loadenvelopes(model::Model, loads::Vector{Vector}, increment::Real)
     #
     envelopes = Vector{ForceEnvelopes}()
 
