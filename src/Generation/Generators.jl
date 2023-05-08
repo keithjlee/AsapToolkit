@@ -413,3 +413,136 @@ function generatewarren2d(n::Integer,
     #output
     return truss
 end
+
+function generatewarren2d(xpositions::Vector{<:Real},
+    ypositions::Vector{<:Real},
+    ypositions2::Vector{<:Real},
+    section::Asap.AbstractSection;
+    type = :arch,
+    base = [0., 0., 0.])
+
+    @assert length(xpositions) == length(ypositions) == length(ypositions2) + 1
+    @assert type == :arch || type == :catenary "type must be :arch or :catenary"
+
+    #counters
+    count = 1
+    longids = Vector{Int64}()
+
+    #node collector
+    nodes = Vector{TrussNode}()
+
+    #generate longer chord first
+    if type == :arch
+        longid = :topchord
+        shortid = :bottomchord
+    else
+        longid = :bottomchord
+        shortid = :topchord
+    end
+
+    n = length(xpositions)
+    i = 1
+
+    ## generate long chord up to symmetry
+    for (x, y) in zip(xpositions, ypositions)
+
+        node = TrussNode([x, y, 0.] .+ base, :free)
+        if i == 1
+            node.dof = [false, false, false]
+            node.id = :pin
+            i += 1
+        else
+            node.id = longid
+        end
+
+        push!(nodes, node)
+        push!(longids, count)
+        count += 1
+    end
+
+    ## generate other side of symmetry
+    Lhalf = last(xpositions)
+    base2 = [Lhalf, 0., 0.] .+ base
+    incs = Lhalf .- reverse(xpositions[1:end-1])
+    for (inc, y) in zip(incs, reverse(ypositions[1:end-1]))
+        node = TrussNode(base2 .+ [inc, y, 0.], :free)
+        node.id = longid
+        push!(nodes, node)
+        push!(longids, count)
+        count += 1
+    end
+    fixnode!(last(nodes), :yfixed)
+
+
+    #generate shorter chord
+    shortids = Vector{Int64}()
+    for i = 1:length(ypositions2)
+
+        xposition = mean(xpositions[i:i+1])
+
+        node = TrussNode([xposition, ypositions2[i], 0.] .+ base, :free)
+        node.id = shortid
+
+        push!(nodes, node)
+        push!(shortids, count)
+        count += 1
+    end
+
+    #other side
+    for (i, y) in zip(length(xpositions):length(longids), reverse(ypositions2))
+        x = first(mean(getproperty.(nodes, :position)[i:i+1]))
+
+        node = TrussNode([x, y, 0.], :free)
+        node.id = shortid
+
+        push!(nodes, node)
+        push!(shortids, count)
+
+        count += 1
+    end
+
+
+    #elements
+    elements = Vector{TrussElement}()
+
+    #long chords
+    for i = 1:length(longids) - 1
+        element = TrussElement(nodes, longids[i:i+1], section)
+        element.id = longid
+
+        push!(elements, element)
+    end
+
+    #short chords
+    for i = 1:length(shortids) - 1
+        element = TrussElement(nodes, shortids[i:i+1], section)
+        element.id = shortid
+
+        push!(elements, element)
+    end
+
+    #webs
+    for i = 1:length(longids) - 1
+        element = TrussElement(nodes, [longids[i], shortids[i]], section)
+        element.id = :web
+        push!(elements, element)
+
+        element = TrussElement(nodes, [shortids[i], longids[i+1]], section)
+        element.id = :web
+        push!(elements, element)
+    end
+
+    #dummy load
+    loads = [NodeForce(n, [0., -1., 0.],) for n in nodes[longid]]
+
+    #assemble and solve
+    model = TrussModel(nodes, elements, loads)
+    planarize!(model)
+    solve!(model)
+
+    #collect data
+    # truss = Warren2D(model, n, dx, dy, section, type, base)
+
+    #output
+    return model
+end
