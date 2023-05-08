@@ -66,6 +66,7 @@ function generateframe(nx::Integer,
         primarySection::Section,
         joistSection::Section,
         braceSection::Section;
+        baseRelease = :pinned,
         diaphragm = false,
         diaphragmSection = nothing,
         columnRelease = :fixedfixed,
@@ -92,7 +93,7 @@ function generateframe(nx::Integer,
 
     #release non-ground nodes
     for node in nodes
-        if last(node.position) > 0.
+        if last(node.position) > last(base)
             fixnode!(node, :free)
         end
     end

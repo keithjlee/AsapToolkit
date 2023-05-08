@@ -184,7 +184,7 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
         L = element.length
 
         #discretization
-        xinc = collect(range(0, L, resolution))
+        xinc = collect(range(0, L, max(resolution, 2)))
 
         #end node information
         uglobal = [element.nodeStart.displacement; element.nodeEnd.displacement]

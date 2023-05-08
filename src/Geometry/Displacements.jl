@@ -247,7 +247,7 @@ function displacements(model::Model, increment::Real)
         L = sum(getproperty.(elements, :length))
         n = max(Int(round(L/increment)), 2)
 
-        push!(results, ElementDisplacements(elements, model))
+        push!(results, ElementDisplacements(elements, model; resolution = n))
     end
 
     return results
