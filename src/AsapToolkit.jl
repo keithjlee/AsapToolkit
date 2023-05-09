@@ -21,7 +21,7 @@ include("Geometry/Displacements.jl")
 export ElementDisplacements
 export displacements
 
-include("Sizing/CISCnaive.jl")
-export trusssizer
-
+include("FDM/Translations.jl")
+export toNetwork
+export toTruss
 end # module AsapToolkit
