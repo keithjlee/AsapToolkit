@@ -563,6 +563,10 @@ struct SpaceFrame
     itop::Matrix{Int64}
     isquares::Matrix{Vector{Int64}}
     isupport::Vector{Int64}
+    iX1::Vector{Int64}
+    iX2::Vector{Int64}
+    iY1::Vector{Int64}
+    iY2::Vector{Int64}
 end
 
 
@@ -707,6 +711,11 @@ function generatespaceframe(nx::Integer,
 
     isupport = findall(truss.nodes, :support)
 
+    ix1 = ibottomnodes[1,:]
+    ix2 = ibottomnodes[end,:]
+    iy1 = ibottomnodes[:,1]
+    iy2 = ibottomnodes[:,end]
+
 
     spaceframe = SpaceFrame(truss,
         nx,
@@ -721,7 +730,11 @@ function generatespaceframe(nx::Integer,
         ibottomnodes,
         itopnodes,
         isquares,
-        isupport)
+        isupport,
+        ix1,
+        ix2,
+        iy1,
+        iy2)
 
     return spaceframe
 end
@@ -878,12 +891,18 @@ function generatespaceframe(nx::Integer,
     isupport = findall(truss.nodes, :support)
 
 
+    ix1 = ibottomnodes[1,:]
+    ix2 = ibottomnodes[end,:]
+    iy1 = ibottomnodes[:,1]
+    iy2 = ibottomnodes[:,end]
+
+
     spaceframe = SpaceFrame(truss,
         nx,
         dx,
         ny,
         dy,
-        z0,
+        dz,
         section,
         support,
         load,
@@ -891,7 +910,11 @@ function generatespaceframe(nx::Integer,
         ibottomnodes,
         itopnodes,
         isquares,
-        isupport)
+        isupport,
+        ix1,
+        ix2,
+        iy1,
+        iy2)
 
     return spaceframe
 end
