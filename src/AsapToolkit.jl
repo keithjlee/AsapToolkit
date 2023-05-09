@@ -1,5 +1,5 @@
 module AsapToolkit
-using Asap, LinearAlgebra, Statistics
+using Asap, LinearAlgebra, Statistics, Interpolations
 
 using Reexport
 @reexport using SteelSections
@@ -7,6 +7,7 @@ using Reexport
 include("Generation/Generators.jl")
 export generateframe
 export generatewarren2d
+export generatespaceframe
 
 include("ForceAnalysis/ForceFunctions.jl")
 include("ForceAnalysis/Translations.jl")
@@ -19,5 +20,8 @@ export loadenvelopes
 include("Geometry/Displacements.jl")
 export ElementDisplacements
 export displacements
+
+include("Sizing/CISCnaive.jl")
+export trusssizer
 
 end # module AsapToolkit
