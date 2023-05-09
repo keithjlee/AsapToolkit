@@ -681,6 +681,12 @@ function generatespaceframe(nx::Integer,
 
 
     #generate supports
+    ix1 = ibottomnodes[1,:]
+    ix2 = ibottomnodes[end,:]
+    iy1 = ibottomnodes[:,1]
+    iy2 = ibottomnodes[:,end]
+
+    #generate supports
     if support == :corner
         for i in [1, nx+1]
             for j in [1, ny+1]
@@ -698,6 +704,25 @@ function generatespaceframe(nx::Integer,
             bottomnodes[i].id = :support
             fixnode!(bottomnodes[i], :pinned)
         end
+    elseif support == :x
+        for i in [ix1; ix2]
+            bottomnodes[i].id = :support
+            fixnode!(bottomnodes[i], :pinned)
+        end
+
+    elseif support == :y
+        for i in [iy1; iy2]
+            bottomnodes[i].id = :support
+            fixnode!(bottomnodes[i], :pinned)
+        end
+
+    elseif support == :xy
+        for i in [ix1; ix2; iy1; iy2]
+            bottomnodes[i].id = :support
+            fixnode!(bottomnodes[i], :pinned)
+        end
+    else
+        error("support must be: :corner, :center, :x, :y, :xy")
     end
 
     flatnodes = [vec(bottomnodes); vec(topnodes)]
@@ -710,11 +735,6 @@ function generatespaceframe(nx::Integer,
     solve!(truss)
 
     isupport = findall(truss.nodes, :support)
-
-    ix1 = ibottomnodes[1,:]
-    ix2 = ibottomnodes[end,:]
-    iy1 = ibottomnodes[:,1]
-    iy2 = ibottomnodes[:,end]
 
 
     spaceframe = SpaceFrame(truss,
@@ -745,34 +765,60 @@ function generatespaceframe(nx::Integer,
     dy::Real,
     z0::Real,
     interpolator::Interpolations.AbstractExtrapolation,
-    section::Asap.AbstractSection;
+    section::Asap.AbstractSection,
+    offset = false;
     support = :corner,
     load = [0., 0., -10.],
     base = [0., 0., 0.])
 
-    @assert bounds(iterpolator.itp) == ((0.0, 1.0), (0.0, 1.0)) "Interpolator must be parameterized from 0 → 1 for both x,y coordinates"
-
-    #generate nodes for bottom plane
-    bottomnodes = [TrussNode([dx * (i-1), dy * (j-1), 0.] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
-    for node in bottomnodes
-        node.id = :bottom
-    end
-
-    #generate top nodes
-    xinit = dx / 2
-    yinit = dy / 2
+    @assert bounds(interpolator.itp) == ((0.0, 1.0), (0.0, 1.0)) "Interpolator must be parameterized from 0 → 1 for both x,y coordinates"
 
     xmax = dx * nx
     ymax = dy * ny
 
-    topnodes = [TrussNode([dx * (i-1) + xinit, 
-        dy * (j-1) + yinit, 
-        z0 + interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], 
-        :free) for i in 1:nx, j in 1:ny]
+    if offset
+        #generate nodes for bottom plane
+        bottomnodes = [TrussNode([dx * (i-1), 
+            dy * (j-1), 
+            interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
+        for node in bottomnodes
+            node.id = :bottom
+        end
 
-    for node in topnodes
-        node.id = :top
+        #generate top nodes
+        xinit = dx / 2
+        yinit = dy / 2
+
+        topnodes = [TrussNode([dx * (i-1) + xinit, 
+            dy * (j-1) + yinit, 
+            z0 + interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], 
+            :free) for i in 1:nx, j in 1:ny]
+
+        for node in topnodes
+            node.id = :top
+        end
+    else
+        #generate nodes for bottom plane
+        bottomnodes = [TrussNode([dx * (i-1), dy * (j-1), 0.] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
+        for node in bottomnodes
+            node.id = :bottom
+        end
+
+        #generate top nodes
+        xinit = dx / 2
+        yinit = dy / 2
+
+        topnodes = [TrussNode([dx * (i-1) + xinit, 
+            dy * (j-1) + yinit, 
+            z0 + interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], 
+            :free) for i in 1:nx, j in 1:ny]
+
+        for node in topnodes
+            node.id = :top
+        end
     end
+
+    
 
     #elements
     elements = Vector{TrussElement}()
@@ -859,6 +905,11 @@ function generatespaceframe(nx::Integer,
         ibottomnodes[i+1,j+1]] for i in 1:nx, j in 1:ny]
 
 
+    ix1 = ibottomnodes[1,:]
+    ix2 = ibottomnodes[end,:]
+    iy1 = ibottomnodes[:,1]
+    iy2 = ibottomnodes[:,end]
+
     #generate supports
     if support == :corner
         for i in [1, nx+1]
@@ -877,6 +928,25 @@ function generatespaceframe(nx::Integer,
             bottomnodes[i].id = :support
             fixnode!(bottomnodes[i], :pinned)
         end
+    elseif support == :x
+        for i in [ix1; ix2]
+            bottomnodes[i].id = :support
+            fixnode!(bottomnodes[i], :pinned)
+        end
+
+    elseif support == :y
+        for i in [iy1; iy2]
+            bottomnodes[i].id = :support
+            fixnode!(bottomnodes[i], :pinned)
+        end
+
+    elseif support == :xy
+        for i in [ix1; ix2; iy1; iy2]
+            bottomnodes[i].id = :support
+            fixnode!(bottomnodes[i], :pinned)
+        end
+    else
+        error("support must be: :corner, :center, :x, :y, :xy")
     end
 
     flatnodes = [vec(bottomnodes); vec(topnodes)]
@@ -891,10 +961,6 @@ function generatespaceframe(nx::Integer,
     isupport = findall(truss.nodes, :support)
 
 
-    ix1 = ibottomnodes[1,:]
-    ix2 = ibottomnodes[end,:]
-    iy1 = ibottomnodes[:,1]
-    iy2 = ibottomnodes[:,end]
 
 
     spaceframe = SpaceFrame(truss,
@@ -902,7 +968,7 @@ function generatespaceframe(nx::Integer,
         dx,
         ny,
         dy,
-        dz,
+        z0,
         section,
         support,
         load,
