@@ -472,6 +472,7 @@ function generatewarren2d(xpositions::Vector{<:Real},
         count += 1
     end
     fixnode!(last(nodes), :yfixed)
+    last(nodes).id = :roller
 
 
     #generate shorter chord
