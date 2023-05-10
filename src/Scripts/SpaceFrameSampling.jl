@@ -8,6 +8,17 @@ dyrange = 1000:250:2000
 dzrange = 1000:250:3500
 supps = [:corner, :x, :y, :xy]
 
+# n = 5
+# x = range(0, 1, n)
+# y = range(0, 1, n)
+# z = 3000 .* rand(n,n)
+
+# itp = cubic_spline_interpolation((x,y), z)
+
+# i = range(0,1, 50)
+# j = range(0,1, 50)
+# k = [itp(i,j) for i in i, j in j]
+
 begin
     sec = rand(allHSSRound())
     tube = toASAPtruss(sec, Steel_Nmm.E)
