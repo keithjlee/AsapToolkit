@@ -5,3 +5,8 @@ Series of extension tools for [Asap.jl](https://github.com/keithjlee/Asap) inclu
 - Internal force analysis across an element: `InternalForces`, `ForceEnvelopes`
 - Automatic frame generation: `generateframe`
 - Automatic 2D truss generation: `generatewarren2d`
+- Automatic 3D spaceframe generation: `generatespaceframe`
+
+# Generation
+## 3D Frame
+`generateframe` can be used to create and analyze a 3D frame structure with joist -> girder -> column hierarchy, bi-directional X-bracing and optional braces in the diaphragm to simulate 

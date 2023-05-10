@@ -66,7 +66,6 @@ function generateframe(nx::Integer,
         primarySection::Section,
         joistSection::Section,
         braceSection::Section;
-        baseRelease = :pinned,
         diaphragm = false,
         diaphragmSection = nothing,
         columnRelease = :fixedfixed,

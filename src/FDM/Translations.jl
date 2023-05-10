@@ -15,7 +15,7 @@ function toNetwork(model::TrussModel)
         pos = node.position
         id = node.id
 
-        dof = all(node.dof) ? true : false
+        dof = all(node.dof)
 
         fdmn = FDMnode(pos, dof)
         fdmn.id = id
@@ -29,7 +29,7 @@ function toNetwork(model::TrussModel)
     for load in model.loads
         i = load.node.nodeID
 
-        push!(loadset, nodeset, i, load.value)
+        push!(loadset, FDMload(nodeset, i, load.value))
     end
 
     #convert elements

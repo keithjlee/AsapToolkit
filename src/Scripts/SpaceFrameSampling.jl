@@ -1,13 +1,15 @@
 using Interpolations, kjlMakie, Asap, AsapToolkit, JSON;
 set_theme!(kjl_dark)
 
-nxrange = 10:30
-nyrange = 10:30
-dxrange = 1000:250:2000
-dyrange = 1000:250:2000
-dzrange = 1000:250:3500
-supps = [:corner, :x, :y, :xy]
-
+#sampling parameters
+begin
+    nxrange = 10:30
+    nyrange = 10:30
+    dxrange = 1000:250:2000
+    dyrange = 1000:250:2000
+    dzrange = 1000:250:3500
+    supps = [:corner, :x, :y, :xy]
+end
 # n = 5
 # x = range(0, 1, n)
 # y = range(0, 1, n)
@@ -25,7 +27,22 @@ begin
     σ = 350.
 end
 
-@time begin
+begin
+    pstore = Vector{Vector{Point3{Float64}}}()
+    estore = Vector{Vector{Point3{Float64}}}()
+    dstore = Vector{Vector{Vector{Float64}}}()
+    fstore = Vector{Vector{Float64}}()
+    fnstore = Vector{Vector{Float64}}()
+    crstore = Vector{Tuple{Float64, Float64}}()
+    suppstore = Vector{Vector{Point3{Float64}}}()
+end
+
+folder = "spaceframes/"
+@time for i = 1:10_000
+    println("SAMPLE $i")
+
+    fn = folder * "spaceframe_$i"
+
     nx = rand(nxrange)
     ny = rand(nyrange)
     dx = rand(dxrange)
@@ -42,104 +59,89 @@ end
         tube, 
         ; 
         load = [0., 0., -30e3],
-        support = supp);
+        support = supp
+        );
 
     truss = sf.truss;
 
-    # dispfac = Observable(5.)
-    # crfac = Observable(0.5)
-    # lw = Observable(3.)
+    eforces =  getindex.(getproperty.(truss.elements, :forces), 2)
+    pts = Point3.(getproperty.(truss.nodes, :position))
+    els = vcat([pts[id] for id in getproperty.(truss.elements, :nodeIDs)]...)
+    sups = Point3.(getproperty.(truss.nodes[:support], :position))
 
-    # sizes = trusssizer.(truss.elements, σ)
-    # AI = Observable([Point2(size) for size in sizes if last(size) != 0])
-    # A = Observable([first(size) for size in sizes if last(size) == 0])
+    if i % 5 == 0
+        push!(fstore, eforces)
+        push!(fnstore, abs.(eforces) ./ maximum(abs.(eforces)))
+        push!(crstore, (-1, 1) .* maximum(abs.(eforces)))
+        push!(suppstore, sups)
+        push!(estore, els)
+        push!(pstore, pts)
+        push!(dstore, getproperty.(truss.nodes, :displacement))
+    end
 
-    # eforces = Observable(getindex.(getproperty.(truss.elements, :forces), 2))
-    # cr = @lift($crfac .* (-1, 1) .* maximum(abs.($eforces)))
+    fig = Figure()
+    ax = Axis3(fig[1,1],
+        aspect = :data)
 
-    # pts = Observable(Point3.(getproperty.(truss.nodes, :position)))
-    # disps = Observable(getproperty.(truss.nodes, :displacement))
-    # els = @lift(vcat([$pts[id] for id in getproperty.(truss.elements, :nodeIDs)]...))
+    hidedecorations!(ax); hidespines!(ax)
 
-    # p_d = @lift($pts .+ $dispfac .* $disps)
-    # e_d = @lift(vcat([$p_d[id] for id in getproperty.(truss.elements, :nodeIDs)]...))
+    linesegments!(els, color = :white)
+    scatter!(sups, strokecolor = :white, color = :black)
 
-    # p_supports = Observable(Point3.(getproperty.(truss.nodes[:support], :position)))
-
-    # fig = Figure(resolution = (1000,500))
-
-    # axtop = Axis3(fig[1,1],
-    #     aspect = :data,
-    #     azimuth = pi,
-    #     title = "Supports [mm]",
-    #     titlesize = 15,
-    #     zticksvisible = false,
-    #     zticklabelsvisible = false,
-    #     xlabelvisible = false,
-    #     zlabelvisible = false,
-    #     ylabelvisible = false,
-    #     xticks = 0:1e4:2e4,
-    #     yticks = 0:2e4:4e4,
-    #     elevation = pi/2)
-
-    # # hidedecorations!(axtop); hidespines!(axtop)
-    # hidespines!(axtop); gridtoggle!(axtop)
-    # axtop.titlevisible = true
-
-    # xy = linesegments!(els,
-    #     linewidth = lw,
-    #     color = eforces,
-    #     colorrange = cr,
-    #     colormap = pink2blue,
-    #     # color = :white
-    #     )
-
-    # suppnodes = scatter!(p_supports,
-    #     color  = :black,
-    #     strokecolor = :white,
-    #     markersize = 10,
-    #     overdraw = true)
-
-    # ax = Axis3(fig[1,2],
-    #     aspect = :data)
-
-    # gridtoggle!(ax); simplifyspines!(ax)
-
-    # u = linesegments!(els,
-    #     color = :white)
-
-    # u.visible = false
-
-    # d = linesegments!(e_d,
-    #     color = eforces,
-    #     colorrange = cr,
-    #     colormap = pink2blue,
-    #     linewidth = lw
-    #     )
-
-    # hidedecorations!(ax); hidespines!(ax)
-
-    # axComp = Axis(fig[2,1],
-    #     xlabel = "min. A [mm²]",
-    #     ylabel = "min. I [mm⁴]",
-    #     title = "Compression",
-    #     aspect = nothing)
-
-    # scatter!(AI, color = pink)
-
-    # axTens = Axis(fig[2,2],
-    #     xlabel = "min. A [mm²]",
-    #     title = "Tension",
-    #     aspect = nothing)
-
-    # vlines!(A, color = (blue, 0.25))
-
-    # labelscale!.((axComp, axTens), 0.75)
-
-    # on(dispfac) do _
-    #     reset_limits!(ax)
-    # end
+    save(fn * ".png", fig)
 
 
-    # fig
-end;
+    data = Dict(
+        "positions" => [node.position[1:2] for node in truss.nodes],
+        "elementindices" => [e.nodeIDs .- 1 for e in truss.elements],
+        "supportindices" => findall(truss.nodes, :support) .- 1,
+        "compliance" => truss.compliance,
+        "loadednodes" => [load.node.nodeID for load in truss.loads] .- 1,
+        "loadvalues" => [load.value for load in truss.loads],
+        "internalforces" => getindex.(getproperty.(truss.elements, :forces), 2),
+        "nodedisplacements" => getproperty.(truss.nodes, :displacement),
+        "E" => first(truss.elements).section.E,
+        "A" => first(truss.elements).section.A
+    )
+
+    ds = JSON.json(data)
+
+    open(fn * ".json","w") do f 
+        write(f, ds) 
+    end
+
+
+    fig
+end
+
+
+i = Observable(1)
+
+els = @lift(estore[$i])
+sup = @lift(suppstore[$i])
+
+begin
+    fig = Figure()
+    ax = Axis3(fig[1,1],
+        aspect = :data)
+
+    hidedecorations!(ax)
+    hidespines!(ax)
+
+    linesegments!(els,
+        color = :white)
+
+    scatter!(sup,
+        color = :black,
+        strokecolor = :white)
+
+    on(i) do _
+        reset_limits!(ax)
+    end
+    fig
+end
+
+iterator = 1:20:2000
+record(fig, "spaceframes.gif", iterator; framerate = 5) do x
+    i[] = x
+end
