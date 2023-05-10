@@ -26,7 +26,7 @@ end
 begin
     nx = 3
     ny = 6
-    nz = 5
+    nz = 30
     dx = 6000
     dy = 5000
     dz = 4200
@@ -45,12 +45,8 @@ begin
         girder,
         joist,
         tube;
-        # joistPsi = 0,
         columnPsi = pi/2,
-        joistRelease = :joist,
-        # columnRelease = :fixedfree,
         diaphragm = true,
-        # primaryRelease = :freefixed
         );
 
     model = frame.model;
@@ -115,7 +111,7 @@ end
 
 # structure plot
 begin
-    fig = Figure(backgroundcolor = :black)
+    fig = Figure(resolution = (1000,1000))
     ax = Axis3(fig[1,1],
         protrusions = 100,
         zlabeloffset = 75,
@@ -138,9 +134,9 @@ begin
         linewidth = propvaln
         ) for (ed, prop, propvaln) in zip(e_d, propertyvals, propertyvalsnormalized)]
 
-    cb = Colorbar(fig[2,1],
-        vertical = false,
-        flipaxis = false,
+    cb = Colorbar(fig[1,2],
+        # vertical = false,
+        # flipaxis = false,
         colorrange = proprangefull,
         colormap = pink2blue,
         label = propname)
