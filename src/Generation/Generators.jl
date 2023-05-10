@@ -688,10 +688,14 @@ function generatespaceframe(nx::Integer,
 
     #generate supports
     if support == :corner
-        for i in [1, nx+1]
-            for j in [1, ny+1]
-                fixnode!(bottomnodes[i,j], :pinned)
-                bottomnodes[i,j].id = :support
+        for i in [1, nx]
+            for j in [1, ny]
+                idset = isquares[i,j]
+
+                for k in idset
+                    fixnode!(bottomnodes[k], :pinned)
+                    bottomnodes[k].id = :support
+                end
             end
         end
     elseif support == :center
@@ -912,10 +916,14 @@ function generatespaceframe(nx::Integer,
 
     #generate supports
     if support == :corner
-        for i in [1, nx+1]
-            for j in [1, ny+1]
-                fixnode!(bottomnodes[i,j], :pinned)
-                bottomnodes[i,j].id = :support
+        for i in [1, nx]
+            for j in [1, ny]
+                idset = isquares[i,j]
+
+                for k in idset
+                    fixnode!(bottomnodes[k], :pinned)
+                    bottomnodes[k].id = :support
+                end
             end
         end
     elseif support == :center

@@ -25,3 +25,6 @@ include("FDM/Translations.jl")
 export toNetwork
 export toTruss
 end # module AsapToolkit
+
+include("Sizing/CISCnaive.jl")
+export trusssizer
