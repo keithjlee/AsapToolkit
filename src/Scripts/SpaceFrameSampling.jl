@@ -37,8 +37,8 @@ begin
     suppstore = Vector{Vector{Point3{Float64}}}()
 end
 
-folder = "spaceframes/"
-@time for i = 1:10_000
+folder = "C:\\dev\\TrussSampling\\data\\spaceframe\\"
+@time for i = 1:2500
     println("SAMPLE $i")
 
     fn = folder * "spaceframe_$i"
@@ -64,35 +64,35 @@ folder = "spaceframes/"
 
     truss = sf.truss;
 
-    eforces =  getindex.(getproperty.(truss.elements, :forces), 2)
-    pts = Point3.(getproperty.(truss.nodes, :position))
-    els = vcat([pts[id] for id in getproperty.(truss.elements, :nodeIDs)]...)
-    sups = Point3.(getproperty.(truss.nodes[:support], :position))
+    # eforces =  getindex.(getproperty.(truss.elements, :forces), 2)
+    # pts = Point3.(getproperty.(truss.nodes, :position))
+    # els = vcat([pts[id] for id in getproperty.(truss.elements, :nodeIDs)]...)
+    # sups = Point3.(getproperty.(truss.nodes[:support], :position))
 
-    if i % 5 == 0
-        push!(fstore, eforces)
-        push!(fnstore, abs.(eforces) ./ maximum(abs.(eforces)))
-        push!(crstore, (-1, 1) .* maximum(abs.(eforces)))
-        push!(suppstore, sups)
-        push!(estore, els)
-        push!(pstore, pts)
-        push!(dstore, getproperty.(truss.nodes, :displacement))
-    end
+    # if i % 5 == 0
+    #     push!(fstore, eforces)
+    #     push!(fnstore, abs.(eforces) ./ maximum(abs.(eforces)))
+    #     push!(crstore, (-1, 1) .* maximum(abs.(eforces)))
+    #     push!(suppstore, sups)
+    #     push!(estore, els)
+    #     push!(pstore, pts)
+    #     push!(dstore, getproperty.(truss.nodes, :displacement))
+    # end
 
-    fig = Figure()
-    ax = Axis3(fig[1,1],
-        aspect = :data)
+    # fig = Figure()
+    # ax = Axis3(fig[1,1],
+    #     aspect = :data)
 
-    hidedecorations!(ax); hidespines!(ax)
+    # hidedecorations!(ax); hidespines!(ax)
 
-    linesegments!(els, color = :white)
-    scatter!(sups, strokecolor = :white, color = :black)
+    # linesegments!(els, color = :white)
+    # scatter!(sups, strokecolor = :white, color = :black)
 
-    save(fn * ".png", fig)
+    # save(fn * ".png", fig)
 
 
     data = Dict(
-        "positions" => [node.position[1:2] for node in truss.nodes],
+        "positions" => [node.position for node in truss.nodes],
         "elementindices" => [e.nodeIDs .- 1 for e in truss.elements],
         "supportindices" => findall(truss.nodes, :support) .- 1,
         "compliance" => truss.compliance,
@@ -110,8 +110,6 @@ folder = "spaceframes/"
         write(f, ds) 
     end
 
-
-    fig
 end
 
 
