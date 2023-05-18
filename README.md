@@ -1,3 +1,5 @@
+![](assets/sfs.gif)
+
 # AsapToolkit
 Series of extension tools for [Asap.jl](https://github.com/keithjlee/Asap) including:
 
