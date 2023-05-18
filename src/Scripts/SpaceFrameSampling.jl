@@ -3,8 +3,8 @@ set_theme!(kjl_dark)
 
 #sampling parameters
 begin
-    nxrange = 10:30
-    nyrange = 10:30
+    nxrange = 5:20
+    nyrange = 5:20
     dxrange = 1000:250:2000
     dyrange = 1000:250:2000
     dzrange = 1000:250:3500
