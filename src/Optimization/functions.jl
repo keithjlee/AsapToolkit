@@ -84,3 +84,11 @@ function solveU(K::SparseMatrixCSC{Float64, Int64}, p::AbstractParams)
     id = p.freeids
     cg(K[id, id], p.P[id])
 end
+
+function Utruss(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::Vector{Float64}, A::Vector{Float64}, p::AbstractParams)
+    ks = [kglobal(X, Y, Z, e, a, id) for (e, a, id) in zip(E, A, p.nodeids)]
+
+    K = assembleglobalK(ks, p)
+
+    solveU(K, p)
+end

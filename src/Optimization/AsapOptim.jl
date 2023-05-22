@@ -6,7 +6,7 @@ include("types.jl")
 export OptParams, OptTrussElement, OptTrussNode
 
 include("functions.jl")
-export kglobal, assembleglobalK, solveU
+export kglobal, assembleglobalK, solveU, Utruss
 
 include("adjoints.jl")
 
