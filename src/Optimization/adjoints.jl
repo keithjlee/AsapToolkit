@@ -99,3 +99,19 @@ function ChainRulesCore.rrule(::typeof(solveU), K::SparseMatrixCSC{Float64, Int6
 
     return u, solveU_pullback
 end
+
+"""
+Pullback of partial array replacement is simply the primal cotangent values *at* the indices of replacement
+"""
+function ChainRulesCore.rrule(::typeof(updatevalues), values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
+
+    v = updatevalues(values, indices, newvalues)
+
+    function updatevalues_pullback(v̄)
+
+        return NoTangent(), NoTangent(), NoTangent(), v̄[indices]
+
+    end
+
+    return v, updatevalues_pullback 
+end

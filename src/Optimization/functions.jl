@@ -62,6 +62,19 @@ function kglobal(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::
     r' * kloc * r
 end
 
+function kglobal(el::OptTrussElement, nStart::OptTrussNode, nEnd::OptTrussNode)
+    veclocal = [nEnd.x - nStart.x, nEnd.y - nStart.y, nEnd.z - nStart.z]
+    len = norm(veclocal)
+
+    cx, cy, cz = veclocal ./ len
+
+    R = Rtruss(cx, cy, cz)
+    kloc = klocal(el.E, el.A, len)
+
+    R' * kloc * R
+end
+
+
 """
 Assemble the global stiffness matrix from a vector of elemental stiffness matrices
 """
@@ -76,7 +89,6 @@ function assembleglobalK(elementalKs::Vector{Matrix{Float64}}, p::AbstractParams
     SparseMatrixCSC(p.n, p.n, p.cp, p.rv, nz)
 end
 
-
 """
 Solve for the displacements of the FREE DOFs of the system
 """
@@ -85,10 +97,15 @@ function solveU(K::SparseMatrixCSC{Float64, Int64}, p::AbstractParams)
     cg(K[id, id], p.P[id])
 end
 
-function Utruss(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::Vector{Float64}, A::Vector{Float64}, p::AbstractParams)
-    ks = [kglobal(X, Y, Z, e, a, id) for (e, a, id) in zip(E, A, p.nodeids)]
+"""
+    updatevalues(values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
 
-    K = assembleglobalK(ks, p)
+Replace the values of `values[indices]` with the values in `newvalues` in a differentiable way. Does NOT perform any type assertions or bounds checks. This should be done before calling this function.
+"""
+function updatevalues(values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
+    
+    v2 = copy(values)
+    v2[indices] .= newvalues
 
-    solveU(K, p)
+    return v2
 end

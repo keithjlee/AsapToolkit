@@ -1,6 +1,6 @@
 abstract type AbstractParams end
 
-mutable struct OptParams <: AbstractParams
+struct TrussOptParams <: AbstractParams
     nodeids::Vector{Vector{Int64}} # [[iNodeStart, iNodeEnd] for element in elements]
     dofids::Vector{Vector{Int64}} # [[dofStartNode..., dofEndNode...] for element in elements]
     P::Vector{Float64} # External load vector
@@ -12,7 +12,7 @@ mutable struct OptParams <: AbstractParams
     rv::Vector{Int64} #S.rowval
     nnz::Int64 #length(S.nzval)
 
-    function OptParams(nodeids, 
+    function TrussOptParams(nodeids, 
             dofids, 
             P, 
             freeids, 
@@ -27,7 +27,7 @@ mutable struct OptParams <: AbstractParams
     end
 end
 
-function OptParams(model::TrussModel)
+function TrussOptParams(model::TrussModel)
     nodeids = getproperty.(model.elements, :nodeIDs)
     dofids = getproperty.(model.elements, :globalID)
     P = model.P
@@ -39,21 +39,53 @@ function OptParams(model::TrussModel)
     rv = model.S.rowval
     nnz = length(model.S.nzval)
 
-    return OptParams(nodeids, dofids, P, freeids, inzs, n, ndofe, cp, rv, nnz)
+    return TrussOptParams(nodeids, dofids, P, freeids, inzs, n, ndofe, cp, rv, nnz)
 end
 
 mutable struct OptTrussNode
-    varid::Int64
+    node::TrussNode
     x::Float64
     y::Float64
     z::Float64
     activity::Vector{Bool}
 end
 
+function OptTrussNode(node::TrussNode, activity::Vector{Bool})
+    @assert length(activity) == 3
+
+    return OptTrussNode(node, node.position..., activity)
+end
+
+nodeActivityDict = Dict(
+    :x => 1,
+    :X => 1,
+    :y => 2,
+    :Y => 2, 
+    :z => 3,
+    :Z => 3)
+
+function OptTrussNode(node::TrussNode, activity::Vector{Symbol})
+    @assert length(activity) <= 3
+    @assert all([in(sym, keys(nodeActivityDict)) for sym in activity])
+
+    active = [false, false, false]
+    for sym in activity
+        active[nodeActivityDict[sym]] = true
+    end
+
+    return OptTrussNode(node, node.position..., active)
+
+end
+
 mutable struct OptTrussElement
-    varid::Int64
-    E::Float64
+    element::TrussElement
     A::Float64
-    L::Float64
+    E::Float64
     activity::Vector{Bool}
+end
+
+function OptTrussElement(element::TrussElement, activity::Vector{Bool})
+    @assert length(activity) == 2
+
+    return OptTrussElement(element, element.section.A, element.section.E, activity)
 end

@@ -3,10 +3,10 @@
 @reexport using IterativeSolvers
 
 include("types.jl")
-export OptParams, OptTrussElement, OptTrussNode
+export TrussOptParams, OptTrussElement, OptTrussNode
 
 include("functions.jl")
-export kglobal, assembleglobalK, solveU, Utruss
+export kglobal, assembleglobalK, solveU, Utruss, updatevalues
 
 include("adjoints.jl")
 
