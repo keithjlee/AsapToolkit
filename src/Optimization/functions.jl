@@ -48,21 +48,8 @@ function kglobal(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::
     r' * kloc * r
 end
 
-function kglobal(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::Vector, A::Vector{Float64}, id::Vector{Int64})
 
-    i1, i2 = id
-
-    veclocal = [X[i2] - X[i1], Y[i2] - Y[i1], Z[i2] - Z[i1]]
-    len = norm(veclocal)
-
-    cx, cy, cz = veclocal ./ len
-    r = Rtruss(cx, cy, cz)
-    kloc = klocal(E, A, len)
-
-    r' * kloc * r
-end
-
-function kglobal(el::OptTrussElement, nStart::OptTrussNode, nEnd::OptTrussNode)
+function kglobal(el::TrussOptElement, nStart::TrussOptNode, nEnd::TrussOptNode)
     veclocal = [nEnd.x - nStart.x, nEnd.y - nStart.y, nEnd.z - nStart.z]
     len = norm(veclocal)
 

@@ -3,7 +3,8 @@
 @reexport using IterativeSolvers
 
 include("types.jl")
-export TrussOptParams, OptTrussElement, OptTrussNode
+export TrussOptParams, TrussOptElement, TrussOptNode, TrussOptProblem
+export SpatialVariable, InternalVariable
 
 include("functions.jl")
 export kglobal, assembleglobalK, solveU, Utruss, updatevalues
