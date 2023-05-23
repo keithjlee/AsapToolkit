@@ -1,15 +1,15 @@
 using Asap, AsapToolkit;
-using Zygote
+using Zygote, LinearAlgebra
 using kjlMakie; set_theme!(kjl_dark)
 
 ### Create a spaceframe
 
 #meta parameters
 begin
-    nx = 15
+    nx = 40
     dx = 1500.
-    ny = 35
-    dy = 1500.
+    ny = 25
+    dy = 2000.
     dz = 3200.
 
     sec = rand(allHSSRound())
@@ -18,8 +18,22 @@ begin
 end
 
 #generation and extraction
-sf = generatespaceframe(nx, dx, ny, dy, dz, tube; load = [0., 0., -30e3], support = :xy);
+sf = generatespaceframe(nx, dx, ny, dy, dz, tube; load = [0., 0., -30e3], support = :corner);
 model = sf.truss;
+
+#assymetric loading
+newloads = Vector{NodeForce}()
+for i in eachindex(model.nodes)
+    if in(i, sf.isupport)
+        continue
+    end
+
+    if first(model.nodes[i].position) ≥ nx * dx / 2 && in(i, sf.ibottom)
+        push!(newloads, NodeForce(model.nodes[i], [0., 0., -40e3]))
+    end
+end
+
+solve!(model, [model.loads; newloads])
 
 #plot assets
 begin
@@ -36,7 +50,7 @@ begin
     ax = Axis3(fig[1,1],
         aspect = :data)
 
-    hidedecorations!(ax); hidespines!(ax)
+    # hidedecorations!(ax); hidespines!(ax)
 
     e_init = linesegments!(e0,
         color = axf,
@@ -48,21 +62,31 @@ begin
 end
 
 # parameters
+p = TrussOptParams(model)
 positions = Asap.nodePositions(model)
 Xo = positions[:, 1]; Yo = positions[:, 2]; Zo = positions[:, 3]
 E = Steel_Nmm.E; A = sec.A
 
 # collect parameters
-p = TrussOptParams(model)
 
-# objective function
-function compliance(dX::Vector{Float64}, dY::Vector{Float64}, dZ::Vector{Float64}, p::TrussOptParams)
 
-    X = Xo .+ dX
-    Y = Yo .+ dY
-    Z = Zo .+ dZ
+iActive = Vector{Int64}()
+for i in eachindex(model.nodes)
+    pos = model.nodes[i].position
+    
+    if (dx < pos[1] < dx * (nx-1)) && (dy < pos[2] < dy * (ny-1))
+        push!(iActive, i)
+    end
+end
 
-    ks = [kglobal(X, Y, Z, E, A, id) for id in p.nodeids]
+iActive = [i for i in eachindex(model.nodes) if !in(i, sf.isupport)]
+
+z0 = Zo[iActive]
+
+function Zfreecompliance(Z::Vector{Float64}, p::TrussOptParams)
+    Znew = updatevalues(Zo, iActive, Z)
+
+    ks = [AsapToolkit.kglobal(Xo, Yo, Znew, E, A, id) for id in p.nodeids]
 
     K = assembleglobalK(ks, p)
 
@@ -71,28 +95,13 @@ function compliance(dX::Vector{Float64}, dY::Vector{Float64}, dZ::Vector{Float64
     U' * p.P[p.freeids]
 end
 
-# initial Δ
-pzero = zero(Xo)
+@time zcomp = Zfreecompliance(z0, p)
+@time g = Zygote.gradient(var -> Zfreecompliance(var, p), z0)[1]
 
-# test
-@time compliance(pzero, pzero, pzero, p)
+lb = z0 .- 2000
+ub = z0 .+ 5000
 
-# closure function for Z only
-Zcompliance(dZ::Vector{Float64}, p::TrussOptParams) = compliance(pzero, pzero, dZ, p)
-
-# test
-@time c = Zcompliance(pzero, p);
-
-# gradient
-@time dcdz = Zygote.gradient(var -> Zcompliance(var, p), pzero)[1];
-
-# initial position and bounds
-z0 = zero(Zo)
-lb = -1500.
-ub = 2500.
-
-# assemble
-func = Optimization.OptimizationFunction(Zcompliance, Optimization.AutoZygote())
+func = Optimization.OptimizationFunction(Zfreecompliance, Optimization.AutoZygote())
 prob = Optimization.OptimizationProblem(func, z0, p;
     lb = lb,
     ub = ub)
@@ -100,11 +109,11 @@ prob = Optimization.OptimizationProblem(func, z0, p;
 # storage/callback
 begin
     losstrace = Vector{Float64}()
-    ztrace = Vector{Vector{Float64}}()
+    valtrace = Vector{Vector{Float64}}()
 
     function cb(vars::Vector{Float64}, loss::Float64)
         push!(losstrace, loss)
-        push!(ztrace, vars)
+        push!(valtrace, vars)
         false
     end
 end
@@ -112,13 +121,13 @@ end
 # solve
 @time sol = Optimization.solve(prob,
     OptimizationNLopt.NLopt.LD_LBFGS(),
-    reltol = 1e-3,
+    reltol = 1e-2,
     callback = cb);
 
 # assemble into new model
 begin
     model2 = deepcopy(model)
-    for (i, node) in enumerate(model2.nodes)
+    for (i, node) in enumerate(model2.nodes[iActive])
         node.position[3] += sol.u[i]
     end
 
@@ -161,58 +170,18 @@ begin
         colormap = pink2blue,
         linewidth = 5)
 
+    axloss = Axis(fig[2, 1:2],
+        aspect = nothing,
+        xlabel = "Iteration",
+        ylabel = "Compliance")
+
+    trace = lines!(losstrace,
+        color = :white,
+        linewidth = 5)
+
+    linkaxes!(ax, ax2)
+
     fig
 end
 
-### using partial variables
-p = TrussOptParams(model)
-
-iActive = [i for i in sf.ibottom if !in(i, sf.isupport)]
-iActive = vec(sf.itop)
-
-iActive = [i for i in collect(1:length(Zo)) if !in(i, sf.isupport)]
-
-iActive = vec(sf.itop)
-z0 = Zo[iActive]
-
-function Zfreecompliance(Z::Vector{Float64}, p::TrussOptParams)
-    Znew = updatevalues(Zo, iActive, Z)
-
-    ks = [AsapToolkit.kglobal(Xo, Yo, Znew, E, A, id) for id in p.nodeids]
-
-    K = assembleglobalK(ks, p)
-
-    U = solveU(K, p)
-
-    U' * p.P[p.freeids]
-end
-
-@time Zfreecompliance(z0, p)
-g = Zygote.gradient(var -> Zfreecompliance(var, p), z0)[1]
-
-lb = z0 .- 1250
-ub = z0 .+ 6000
-
-func = Optimization.OptimizationFunction(Zfreecompliance, Optimization.AutoZygote())
-prob = Optimization.OptimizationProblem(func, z0, p;
-    lb = lb,
-    ub = ub)
-
-# storage/callback
-begin
-    losstrace = Vector{Float64}()
-    valtrace = Vector{Vector{Float64}}()
-
-    function cb(vars::Vector{Float64}, loss::Float64)
-        push!(losstrace, loss)
-        push!(valtrace, vars)
-        false
-    end
-end
-
-# solve
-@time sol = Optimization.solve(prob,
-    OptimizationNLopt.NLopt.LD_LBFGS(),
-    reltol = 1e-3,
-    callback = cb);
 
