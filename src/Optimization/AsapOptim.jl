@@ -6,8 +6,8 @@ include("types.jl")
 export TrussOptParams, TrussOptElement, TrussOptNode, TrussOptProblem
 export SpatialVariable, InternalVariable
 
-include("functions.jl")
-export kglobal, assembleglobalK, solveU, Utruss, updatevalues
+include("Functions.jl")
+export kglobal, assembleglobalK, solveU, Utruss, replacevalues, addvalues
 
 include("adjoints.jl")
 

@@ -6,7 +6,7 @@ using kjlMakie; set_theme!(kjl_dark)
 
 #meta parameters
 begin
-    nx = 10
+    nx = 12
     dx = 750.
     ny = 10
     dy = 1500.
@@ -61,7 +61,7 @@ z0 = Zo[iActive]
 
 #obj func
 function Zfreecompliance(Z::Vector{Float64}, p::TrussOptParams)
-    Znew = updatevalues(Zo, iActive, Z)
+    Znew = replacevalues(Zo, iActive, Z)
 
     ks = [AsapToolkit.kglobal(Xo, Yo, Znew, E, A, id) for id in p.nodeids]
 
@@ -74,7 +74,7 @@ end
 
 #obj func without adjoint
 function ZfreecomplianceNoAdjoint(Z::Vector{Float64}, p::TrussOptParams)
-    Znew = updatevalues(Zo, iActive, Z)
+    Znew = replacevalues(Zo, iActive, Z)
 
     ks = [AsapToolkit.kglobal(Xo, Yo, Znew, E, A, id) for id in p.nodeids]
 

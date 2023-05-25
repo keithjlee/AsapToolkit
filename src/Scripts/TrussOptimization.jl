@@ -1,5 +1,5 @@
 using Asap, AsapToolkit;
-using Zygote, LinearAlgebra
+using Zygote, LinearAlgebra, Interpolations
 using kjlMakie; set_theme!(kjl_dark)
 
 ### Create a spaceframe
@@ -18,7 +18,7 @@ begin
 end
 
 #generation and extraction
-sf = generatespaceframe(nx, dx, ny, dy, dz, tube; load = [0., 0., -30e3], support = :corner);
+sf = generatespaceframe(nx, dx, ny, dy, dz, tube; load = [0., 0., -30e3], support = :y);
 model = sf.truss;
 
 #assymetric loading
@@ -185,3 +185,60 @@ begin
 end
 
 
+###bezier method
+n = 5
+x = range(0, 1, n)
+y = range(0, 1, n)
+z = 3000 .* rand(n,n)
+
+itp = cubic_spline_interpolation((x,y), z)
+
+i = range(0,1, 50)
+j = range(0,1, 50)
+k = [itp(i,j) for i in i, j in j]
+
+
+xrange = range(0, nx*dx,n)
+yrange = range(0, ny*dy,n)
+zvals = 3000 .* rand(n,n)
+@time itp = cubic_spline_interpolation((xrange, yrange), z);
+
+iActive = vec(sf.itop)
+z0 = Zo[iActive]
+
+zdiff = itp.(Xo[iActive], Yo[iActive]) .+ Zo[iActive]
+
+
+function Zinterpolatecompliance(z::Vector{Float64}, p::TrussOptParams)
+    #make interpolator
+    itp = cubic_spline_interpolation((xrange, yrange), reshape(z, n, n))
+    Zshift = itp.(Xo[iActive], Yo[iActive]) .+ Zo[iActive]
+
+    Znew = updatevalues(Zo, iActive, Zshift)
+
+
+    ks = [AsapToolkit.kglobal(Xo, Yo, Znew, E, A, id) for id in p.nodeids]
+
+    K = assembleglobalK(ks, p)
+
+    U = solveU(K, p)
+
+    U' * p.P[p.freeids]
+end
+
+z0 = vec(zvals)
+
+@time Zinterpolatecompliance(z0, p);
+@time Zygote.gradient(var -> Zinterpolatecompliance(var, p), z0)
+
+function tfunc(z::Vector{Float64})
+    itp = cubic_spline_interpolation((xrange, yrange), reshape(z, n, n))
+    norm(itp.(Xo[iActive], Yo[iActive]))
+end
+
+tfunc(z0)
+Zygote.gradient(tfunc, z0)
+
+function bernstein(i::Int64, n::Int64, u::Float64)
+    factorial(n) / (factorial(i) * factorial(n - u)) * u^i * (1 - i)^(n - i)
+end

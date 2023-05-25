@@ -4,11 +4,11 @@ Adjoint w/r/t element variables E, A, L for the local stiffness matrix of a trus
 function ChainRulesCore.rrule(::typeof(klocal), E::Float64, A::Float64, L::Float64)
     k = klocal(E, A, L)
 
-    function klocal_pullback(dk)
+    function klocal_pullback(k̄)
 
-        ∇E = sum(dk .* (A / L * [1 -1; -1 1]))
-        ∇A = sum(dk .* (E / L * [1 -1; -1 1]))
-        ∇L = sum(dk .* (- E * A / L^2 * [1 -1; -1 1]))
+        ∇E = sum(k̄ .* (A / L * [1 -1; -1 1]))
+        ∇A = sum(k̄ .* (E / L * [1 -1; -1 1]))
+        ∇L = sum(k̄ .* (- E * A / L^2 * [1 -1; -1 1]))
 
         return (NoTangent(), ∇E, ∇A, ∇L)
     end
@@ -48,8 +48,8 @@ Output is a vector: [nElements × [nDOFe × nDOFe]] of elemental stiffness matri
 function ChainRulesCore.rrule(::typeof(assembleglobalK), Eks::Vector{Matrix{Float64}}, p::AbstractParams)
     K = assembleglobalK(Eks, p)
 
-    function K_pullback(dK)
-        dEks = [Matrix(dK[id, id]) for id in p.dofids]
+    function K_pullback(K̄)
+        dEks = [Matrix(K̄[id, id]) for id in p.dofids]
 
         return NoTangent(), dEks, NoTangent()
     end
@@ -62,17 +62,17 @@ u = inv(K) * P
 
 if obj = f(u), then the gradient of obj with respect to an independent variable x is achieved through the chain rule:
 
-dObj/dx = df/du ⋅ du/dK ⋅ ...
+dObj/dx = df/du ⋅ du/dK ⋅ ... = ū ⋅ dy/dK ⋅ ...
 
 For this rule, we are concerned with finding du/dK, or the [ndof × ndof] matrix of sensitivites that we can propagate backwards to the final objective.
 
-Given df/du = [ndof × 1] = Δu is the gradient of the objective function with respect to displacements u, the sensitivity is:
+Given df/du = [ndof × 1] = ū is the gradient of the objective function with respect to displacements u, the sensitivity is:
 
 du/dK = - uᵀ ⊗ K⁻¹
-df/dK = du/dK ū = - (uᵀ ⊗ K⁻¹)Δu
+df/dK = du/dK ū = - (uᵀ ⊗ K⁻¹)ū
 
 Can be rearranged such that:
-ΔK = K⁻¹Δu
+ΔK = K⁻¹ū
 
 df/dK = -uᵀ ⊗ ΔK
 
@@ -83,13 +83,13 @@ Columnᵢ = uᵢ .* ΔK
 function ChainRulesCore.rrule(::typeof(solveU), K::SparseMatrixCSC{Float64, Int64}, p::AbstractParams)
     u = solveU(K, p)
 
-    function solveU_pullback(Δ)
+    function solveU_pullback(ū)
 
         #initialize
         dudK = zeros(p.n, p.n)
 
         #sensitivities w/r/t active DOFs
-        dKΔ = cg(K[p.freeids, p.freeids], Δ)
+        dKΔ = cg(K[p.freeids, p.freeids], ū)
 
         #assign to proper indices
         dudK[p.freeids, p.freeids] .= kron(u', dKΔ)
@@ -101,17 +101,42 @@ function ChainRulesCore.rrule(::typeof(solveU), K::SparseMatrixCSC{Float64, Int6
 end
 
 """
-Pullback of partial array replacement is simply the primal cotangent values *at* the indices of replacement
+Pullback of partial array replacement is simply the primal cotangent values *at* the indices of replacement.
+
+df/dnewvalues = df/dvalues ⋅ dvalues / dnewvalues = v̄ ⋅ dvalues / dnewvalues
+
+Where v̄ = [nvalues × 1], dvalues/dnewvalues = [nvalues × nnewvalues] so:
+
+df/dnewvalues = (dvalues/dnewvalues)ᵀv̄ = [nnewvalues × 1]
+
+Is simply the values of v̄ at the indices of the new values.
 """
-function ChainRulesCore.rrule(::typeof(updatevalues), values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
+function ChainRulesCore.rrule(::typeof(replacevalues), values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
 
-    v = updatevalues(values, indices, newvalues)
+    v = replacevalues(values, indices, newvalues)
 
-    function updatevalues_pullback(v̄)
+    function replacevalues_pullback(v̄)
 
         return NoTangent(), NoTangent(), NoTangent(), v̄[indices]
 
     end
 
-    return v, updatevalues_pullback 
+    return v, replacevalues_pullback 
+end
+
+
+"""
+Pullback of partial array replacement is simply the primal cotangent values *at* the indices of replacement
+"""
+function ChainRulesCore.rrule(::typeof(addvalues), values::Vector{Float64}, indices::Vector{Int64}, increments::Vector{Float64})
+
+    v = addvalues(values, indices, increments)
+
+    function addvalues_pullback(v̄)
+
+        return NoTangent(), NoTangent(), NoTangent(), v̄[indices]
+
+    end
+
+    return v, addvalues_pullback 
 end

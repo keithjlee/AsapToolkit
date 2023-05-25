@@ -85,14 +85,27 @@ function solveU(K::SparseMatrixCSC{Float64, Int64}, p::AbstractParams)
 end
 
 """
-    updatevalues(values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
+    replacevalues(values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
 
-Replace the values of `values[indices]` with the values in `newvalues` in a differentiable way. Does NOT perform any type assertions or bounds checks. This should be done before calling this function.
+Replace the values of `values[indices]` with the values in `newvalues` in a differentiable way. Does NOT perform any bounds checking or vector length consistency. This should be done before calling this function.
 """
-function updatevalues(values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
+function replacevalues(values::Vector{Float64}, indices::Vector{Int64}, newvalues::Vector{Float64})
     
     v2 = copy(values)
     v2[indices] .= newvalues
+
+    return v2
+end
+
+"""
+    addvalues(values::Vector{Float64}, indices::Vector{Int64}, increments::Vector{Float64})
+
+Add the values of `increment` to the current values in `values` at `indices`. Does NOT perform any bounds checking or vector length consistency. This should be done before calling this function.
+"""
+function addvalues(values::Vector{Float64}, indices::Vector{Int64}, increments::Vector{Float64})
+
+    v2 = copy(values)
+    v2[indices] .+= increments
 
     return v2
 end
