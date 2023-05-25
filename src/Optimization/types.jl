@@ -1,7 +1,9 @@
-abstract type AbstractParams end
-abstract type OptVariable end
+abstract type AbstractOptParams end
+abstract type AbstractVariable end
+abstract type AbstractOptProblem end
+abstract type AbstractIndexer end
 
-struct TrussOptParams <: AbstractParams
+struct TrussOptParams <: AbstractOptParams
     nodeids::Vector{Vector{Int64}} # [[iNodeStart, iNodeEnd] for element in elements]
     dofids::Vector{Vector{Int64}} # [[dofStartNode..., dofEndNode...] for element in elements]
     P::Vector{Float64} # External load vector
@@ -43,87 +45,7 @@ function TrussOptParams(model::TrussModel)
     return TrussOptParams(nodeids, dofids, P, freeids, inzs, n, ndofe, cp, rv, nnz)
 end
 
-mutable struct TrussOptNode
-    node::TrussNode
-    x::Float64
-    y::Float64
-    z::Float64
-    activity::Vector{Bool}
-end
-
-function TrussOptNode(node::TrussNode, activity::Vector{Bool})
-    @assert length(activity) == 3
-
-    return TrussOptNode(node, node.position..., activity)
-end
-
-axis2ind = Dict(
-    :x => 1,
-    :X => 1,
-    :y => 2,
-    :Y => 2, 
-    :z => 3,
-    :Z => 3)
-
-function TrussOptNode(node::TrussNode, activity::Vector{Symbol})
-    @assert length(activity) <= 3
-    @assert all([in(sym, keys(axis2ind)) for sym in activity])
-
-    active = [false, false, false]
-    for sym in activity
-        active[axis2ind[sym]] = true
-    end
-
-    return TrussOptNode(node, node.position..., active)
-
-end
-
-mutable struct TrussOptElement
-    element::TrussElement
-    A::Float64
-    E::Float64
-    activity::Vector{Bool}
-end
-
-function TrussOptElement(element::TrussElement, activity::Vector{Bool})
-    @assert length(activity) == 2
-
-    return TrussOptElement(element, element.section.A, element.section.E, activity)
-end
-
-mutable struct TrussOptProblem
-    model::TrussModel #the reference truss model for optimization
-    variables::Vector{<:OptVariable}
-    X::Vector{Float64} #all X coordinates |n_node|
-    Y::Vector{Float64} #all Y coordinates |n_node|
-    Z::Vector{Float64} #all Z coordinates |n_node|
-    E::Vector{Float64} #all element young's modulii |n_element|
-    A::Vector{Float64} #all element areas |n_element|
-    params::TrussOptParams #optimization params
-    nspatial::Int64 #number of spatial variables (3 × n_node)
-    ninternal::Int64 #number of internal variables (n_element)
-
-    function TrussOptProblem(model::TrussModel, variables::Vector{<:OptVariable})
-        @assert model.processed
-
-        xyz = Asap.nodePositions(model)
-        X = xyz[:, 1]; Y = xyz[:, 2]; Z = xyz[:, 3]
-
-        E = [e.section.E for e in model.elements]
-        A = [e.section.A for e in model.elements]
-
-        params = TrussOptParams(model)
-
-        nspatial = model.nNodes * 3
-        ninternal = model.nElements * 3
-
-        return new(model, variables, X, Y, Z, E, A, params, nspatial, ninternal)
-
-    end
-end
-
-
-mutable struct SpatialVariable <: OptVariable
+mutable struct SpatialVariable <: AbstractVariable
     i::Int64 #index of node, e.g. X[i] is the spatial variable
     val::Float64 #value
     lb::Float64 #lower bound of variable
@@ -154,40 +76,120 @@ mutable struct SpatialVariable <: OptVariable
     end
 end
 
-mutable struct InternalVariable <: OptVariable
+mutable struct AreaVariable <: AbstractVariable
     i::Int64 #index of element, e.g. A[i] is the area variable
     val::Float64
     lb::Float64
     ub::Float64
 
-    function InternalVariable(elementindex::Int64, value::Float64, lowerbound::Float64, upperbound::Float64)
+    function AreaVariable(elementindex::Int64, value::Float64, lowerbound::Float64, upperbound::Float64)
         return new(elementindex, value, lowerbound, upperbound)
     end
 
-    function InternalVariable(element::TrussElement, value::Float64, lowerbound::Float64, upperbound::Float64)
+    function AreaVariable(element::TrussElement, value::Float64, lowerbound::Float64, upperbound::Float64)
         return new(element.elementID, value, lowerbound, upperbound)
     end
 
-    function InternalVariable(element::TrussElement, lowerbound::Float64, upperbound::Float64)
+    function AreaVariable(element::TrussElement, lowerbound::Float64, upperbound::Float64)
         return new(element.elementID, element.section.A, lowerbound, upperbound)
     end
 end
 
-#generate objective function
-mutable struct TrussOptIndexer
+mutable struct CoupledVariable <: AbstractVariable
+    i::Int64
+    referencevariable::AbstractVariable
+
+    function CoupledVariable(node::TrussNode, ref::SpatialVariable)
+        return new(node.nodeID, ref)
+    end
+
+    function CoupledVariable(element::TrussElement, ref::AreaVariable)
+        return new(element.elementID, ref)
+    end
+end
+
+mutable struct TrussOptIndexer <: AbstractIndexer
     iX::Vector{Int64}
+    iXg::Vector{Int64}
     iY::Vector{Int64}
+    iYg::Vector{Int64}
     iZ::Vector{Int64}
+    iZg::Vector{Int64}
     iA::Vector{Int64}
-    vX::Vector{Float64}
-    vY::Vector{Float64}
-    vZ::Vector{Float64}
-    nXstart::Int64
-    nYstart::Int64
-    nZstart::Int64
-    nEstart::Int64
-    iVars::Vector{Int64}
-    iVals::Vector{Float64}
-    ubs::Vector{Float64}
-    lbs::Vector{Float64}
+    iAg::Vector{Int64}
+end
+
+# quick reference to relevant field in TrussOptIndexer from variables
+axis2field = Dict(:X => (:iX, :iXg),
+    :x => (:iX, :iXg),
+    :Y => (:iY, :iYg),
+    :y => (:iY, :iYg),
+    :Z => (:iZ, :iZg),
+    :z => (:iZ, :iZg))
+
+function populate!(indexer::TrussOptIndexer, var::SpatialVariable, i::Int64)
+    field_local, field_global = axis2field(var.axis)
+
+    push!(getfield(indexer, field_local), var.i)
+    push!(getfield(indexer, field_global), i)
+end
+
+function populate!(indexer::TrussOptIndexer, var::AreaVariable, i::Int64)
+    push!(getfield(indexer, :iA), var.i)
+    push!(getfield(indexer, :iAg), i)
+end
+
+function populate!(indexer::TrussOptIndexer, var::CoupledVariable, i::Int64)
+    
+end
+
+function TrussOptIndexer(vars::Vector{Union{SpatialVariable, AreaVariable}})
+    indexer = TrussOptIndexer(Vector{Int64}(),
+        Vector{Int64}(),
+        Vector{Int64}(),
+        Vector{Int64}(),
+        Vector{Int64}(),
+        Vector{Int64}(),
+        Vector{Int64}(),
+        Vector{Int64}())
+
+    for (i, var) in enumerate(vars)
+        populate!(indexer, var, i)
+    end
+    
+    return indexer
+end
+
+mutable struct TrussOptProblem <: AbstractOptProblem
+    model::TrussModel #the reference truss model for optimization
+    params::TrussOptParams #optimization params
+    variables::Vector{Union{SpatialVariable, AreaVariable}}
+    X::Vector{Float64} #all X coordinates |n_node|
+    Y::Vector{Float64} #all Y coordinates |n_node|
+    Z::Vector{Float64} #all Z coordinates |n_node|
+    E::Vector{Float64} #all element young's modulii |n_element|
+    A::Vector{Float64} #all element areas |n_element|
+    values::Vector{Float64} #design variables
+    lb::Vector{Float64} #lower bounds of variables
+    ub::Vector{Float64} #upper bounds of variables
+    nspatial::Int64 #number of spatial variables (3 × n_node)
+    ninternal::Int64 #number of internal variables (n_element)
+
+    function TrussOptProblem(model::TrussModel, variables::Vector{<:OptVariable})
+        @assert model.processed
+
+        xyz = Asap.nodePositions(model)
+        X = xyz[:, 1]; Y = xyz[:, 2]; Z = xyz[:, 3]
+
+        E = [e.section.E for e in model.elements]
+        A = [e.section.A for e in model.elements]
+
+        params = TrussOptParams(model)
+
+        nspatial = model.nNodes * 3
+        ninternal = model.nElements * 3
+
+        return new(model, variables, X, Y, Z, E, A, params, nspatial, ninternal)
+
+    end
 end
