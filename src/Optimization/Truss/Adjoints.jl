@@ -1,3 +1,20 @@
+function ChainRulesCore.rrule(::typeof(localvector), x1::Float64, x2::Float64, y1::Float64, y2::Float64, z1::Float64, z2::Float64)
+
+    vector = localvector(x1::Float64, x2::Float64, y1::Float64, y2::Float64, z1::Float64, z2::Float64)
+
+    function localvector_pullback(v̄)
+        return (NoTangent(),
+            dot(v̄, [-1., 0., 0.]),
+            dot(v̄, [1., 0., 0.]),
+            dot(v̄, [0., -1., 0.]),
+            dot(v̄, [0., 1., 0.]),
+            dot(v̄, [0., 0., -1.]),
+            dot(v̄, [0., 0., 1.]))
+    end
+
+    return vector, localvector_pullback
+end
+
 """
 Adjoint w/r/t element variables E, A, L for the local stiffness matrix of a truss element
 """
@@ -6,9 +23,9 @@ function ChainRulesCore.rrule(::typeof(klocal), E::Float64, A::Float64, L::Float
 
     function klocal_pullback(k̄)
 
-        ∇E = sum(k̄ .* (A / L * [1 -1; -1 1]))
-        ∇A = sum(k̄ .* (E / L * [1 -1; -1 1]))
-        ∇L = sum(k̄ .* (- E * A / L^2 * [1 -1; -1 1]))
+        ∇E = dot(k̄, (A / L * [1 -1; -1 1]))
+        ∇A = dot(k̄, (E / L * [1 -1; -1 1]))
+        ∇L = dot(k̄, (- E * A / L^2 * [1 -1; -1 1]))
 
         return (NoTangent(), ∇E, ∇A, ∇L)
     end
@@ -23,21 +40,35 @@ function ChainRulesCore.rrule(::typeof(L), x1::Float64, x2::Float64, y1::Float64
     len = L(x1::Float64, x2::Float64, y1::Float64, y2::Float64, z1::Float64, z2::Float64)
 
     function L_pullback(dL)
-        den = len^3
-
         xdiff = x2 - x1
         ydiff = y2 - y1
         zdiff = z2 - z1
 
-        return (NoTangent(), -dL * xdiff / den, 
-            dL * xdiff / den,
-            -dL * ydiff / den,
-            dL * ydiff / den,
-            -dL * zdiff / den,
-            dL * zdiff / den)
+        return (NoTangent(), -dL * xdiff / len, 
+            dL * xdiff / len,
+            -dL * ydiff / len,
+            dL * ydiff / len,
+            -dL * zdiff / len,
+            dL * zdiff / len)
     end
 
     return len, L_pullback
+end
+
+"""
+Adjoint for global transformation matrix
+"""
+function ChainRulesCore.rrule(::typeof(Rtruss), Cx::Float64, Cy::Float64, Cz::Float64)
+    R = Rtruss(Cx, Cy, Cz)
+
+    function Rtruss_pullback(R̄)
+        return (NoTangent(),
+            dot(R̄, [1. 0. 0. 0. 0. 0.; 0. 0. 0. 1. 0. 0.]),
+            dot(R̄, [0. 1. 0. 0. 0. 0.; 0. 0. 0. 0. 1. 0.]),
+            dot(R̄, [0. 0. 1. 0. 0. 0.; 0. 0. 0. 0. 0. 1.]))
+    end
+
+    return R, Rtruss_pullback
 end
 
 """
@@ -45,7 +76,7 @@ The sensitivity of K w/r/t an elemental Kₑ is the proportional stiffness added
 
 Output is a vector: [nElements × [nDOFe × nDOFe]] of elemental stiffness matrix sensitivites
 """
-function ChainRulesCore.rrule(::typeof(assembleglobalK), Eks::Vector{Matrix{Float64}}, p::AbstractParams)
+function ChainRulesCore.rrule(::typeof(assembleglobalK), Eks::Vector{Matrix{Float64}}, p::TrussOptParams)
     K = assembleglobalK(Eks, p)
 
     function K_pullback(K̄)
@@ -80,7 +111,7 @@ Which is an [ndof × ndof] matrix where:
 
 Columnᵢ = uᵢ .* ΔK
 """
-function ChainRulesCore.rrule(::typeof(solveU), K::SparseMatrixCSC{Float64, Int64}, p::AbstractParams)
+function ChainRulesCore.rrule(::typeof(solveU), K::SparseMatrixCSC{Float64, Int64}, p::TrussOptParams)
     u = solveU(K, p)
 
     function solveU_pullback(ū)

@@ -1,3 +1,12 @@
+function localvector(x1::Float64, x2::Float64, y1::Float64, y2::Float64, z1::Float64, z2::Float64)
+    [x2 - x1, y2 - y1, z2 - z1]
+end
+
+function localvector(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, id::Vector{Int64})
+    [X[id[2]] - X[id[1]], Y[id[2]] - Y[id[1]], Z[id[2]] - Z[id[1]]]
+end
+
+
 """
 Local stiffness matrix for truss element
 """
@@ -22,18 +31,6 @@ end
 """
 elemental stiffness matrix in GCS
 """
-function kglobal(posStart::Vector{Float64}, posEnd::Vector{Float64}, E::Float64, A::Float64)
-    
-    veclocal = posEnd .- posStart
-    len = norm(veclocal)
-
-    cx, cy, cz = veclocal ./ len
-    r = Rtruss(cx, cy, cz)
-    kloc = klocal(E, A, len)
-
-    r' * kloc * r
-end
-
 function kglobal(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::Float64, A::Float64, id::Vector{Int64})
 
     i1, i2 = id
@@ -48,24 +45,10 @@ function kglobal(X::Vector{Float64}, Y::Vector{Float64}, Z::Vector{Float64}, E::
     r' * kloc * r
 end
 
-
-function kglobal(el::TrussOptElement, nStart::TrussOptNode, nEnd::TrussOptNode)
-    veclocal = [nEnd.x - nStart.x, nEnd.y - nStart.y, nEnd.z - nStart.z]
-    len = norm(veclocal)
-
-    cx, cy, cz = veclocal ./ len
-
-    R = Rtruss(cx, cy, cz)
-    kloc = klocal(el.E, el.A, len)
-
-    R' * kloc * R
-end
-
-
 """
 Assemble the global stiffness matrix from a vector of elemental stiffness matrices
 """
-function assembleglobalK(elementalKs::Vector{Matrix{Float64}}, p::AbstractParams)
+function assembleglobalK(elementalKs::Vector{Matrix{Float64}}, p::TrussOptParams)
 
     nz = zeros(p.nnz)
 
@@ -79,7 +62,7 @@ end
 """
 Solve for the displacements of the FREE DOFs of the system
 """
-function solveU(K::SparseMatrixCSC{Float64, Int64}, p::AbstractParams)
+function solveU(K::SparseMatrixCSC{Float64, Int64}, p::TrussOptParams)
     id = p.freeids
     cg(K[id, id], p.P[id])
 end
@@ -100,7 +83,7 @@ end
 """
     addvalues(values::Vector{Float64}, indices::Vector{Int64}, increments::Vector{Float64})
 
-Add the values of `increment` to the current values in `values` at `indices`. Does NOT perform any bounds checking or vector length consistency. This should be done before calling this function.
+Add the values of `increments` to the current values in `values` at `indices`. Does NOT perform any bounds checking or vector length consistency. This should be done before calling this function.
 """
 function addvalues(values::Vector{Float64}, indices::Vector{Int64}, increments::Vector{Float64})
 

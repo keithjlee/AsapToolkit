@@ -2,12 +2,13 @@
 @reexport import Optimization, OptimizationNLopt
 @reexport using IterativeSolvers
 
-include("types.jl")
-export TrussOptParams, TrussOptElement, TrussOptNode, TrussOptProblem
-export SpatialVariable, InternalVariable
+include("Truss/Translation.jl")
 
-include("Functions.jl")
-export kglobal, assembleglobalK, solveU, Utruss, replacevalues, addvalues
+include("Truss/Types.jl")
+export TrussOptProblem
+export SpatialVariable, AreaVariable, CoupledVariable, AbstractVariable
 
-include("adjoints.jl")
+include("Truss/Functions.jl")
+export kglobal, L, Rtruss, assembleglobalK, solveU, Utruss, replacevalues, addvalues
 
+include("Truss/Adjoints.jl")
