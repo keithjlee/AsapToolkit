@@ -32,5 +32,4 @@ export toTruss
 include("Sizing/CISCnaive.jl")
 export trusssizer
 
-include("Optimization/AsapOptim.jl")
 end # module AsapToolkit
