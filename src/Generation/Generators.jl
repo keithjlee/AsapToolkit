@@ -852,7 +852,7 @@ function generatespaceframe(nx::Integer,
     for j = 1:ny
         for i = 1:nx-1
             element = TrussElement(topnodes[i,j], topnodes[i+1,j], section)
-            element.id = :bottom
+            element.id = :top
 
             push!(elements, element)
         end
@@ -862,7 +862,7 @@ function generatespaceframe(nx::Integer,
     for i = 1:nx
         for j = 1:ny-1
             element = TrussElement(topnodes[i,j], topnodes[i,j+1], section)
-            element.id = :bottom
+            element.id = :top
 
             push!(elements, element)
         end
