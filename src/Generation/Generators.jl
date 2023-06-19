@@ -309,6 +309,7 @@ function generatewarren2d(n::Integer,
         dx::Real,
         dy::Real,
         section::Asap.AbstractSection;
+        load = [0., -1., 0.],
         type = :arch,
         base = [0., 0., 0.])
 
@@ -399,7 +400,7 @@ function generatewarren2d(n::Integer,
     end
 
     #dummy load
-    loads = [NodeForce(n, [0., -1., 0.],) for n in nodes[longid]]
+    loads = [NodeForce(n, load) for n in nodes[longid]]
 
     #assemble and solve
     model = TrussModel(nodes, elements, loads)
