@@ -324,12 +324,12 @@ function generatewarren2d(n::Integer,
 
     #generate longer chord first
     if type == :arch
-        longid = :topchord
-        shortid = :bottomchord
-        y = dy
-    else
         longid = :bottomchord
         shortid = :topchord
+        y = dy
+    else
+        longid = :topchord
+        shortid = :bottomchord
         y = -dy
     end
 
@@ -432,11 +432,11 @@ function generatewarren2d(xpositions::Vector{<:Real},
 
     #generate longer chord first
     if type == :arch
-        longid = :topchord
-        shortid = :bottomchord
-    else
         longid = :bottomchord
         shortid = :topchord
+    else
+        longid = :topchord
+        shortid = :bottomchord
     end
 
     n = length(xpositions)
