@@ -3,6 +3,7 @@ using Asap, LinearAlgebra, Statistics, Interpolations, SparseArrays
 
 using Reexport
 @reexport using SteelSections
+@reexport using AsapHarmonics
 
 include("generalutils.jl")
 export explicitzero
