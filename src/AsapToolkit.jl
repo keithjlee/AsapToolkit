@@ -1,10 +1,6 @@
 module AsapToolkit
 using Asap, LinearAlgebra, Statistics, Interpolations, SparseArrays
 
-using Reexport
-@reexport using SteelSections
-@reexport using AsapHarmonics
-
 include("generalutils.jl")
 export explicitzero
 export allinz
@@ -32,5 +28,7 @@ export toTruss
 
 include("Sizing/CISCnaive.jl")
 export trusssizer
+
+include("SteelSections/SteelSections.jl")
 
 end # module AsapToolkit
