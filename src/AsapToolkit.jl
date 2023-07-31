@@ -1,10 +1,6 @@
 module AsapToolkit
 using Asap, LinearAlgebra, Statistics, Interpolations, SparseArrays
 
-include("generalutils.jl")
-export explicitzero
-export allinz
-
 include("Generation/Generators.jl")
 export generateframe
 export generatewarren2d
