@@ -1,5 +1,6 @@
 module AsapToolkit
 using Asap, LinearAlgebra, Statistics, Interpolations, SparseArrays
+using JSON
 
 include("Generation/Generators.jl")
 export generateframe
@@ -30,5 +31,8 @@ include("Sizing/CISCnaive.jl")
 export trusssizer
 
 include("SteelSections/SteelSections.jl")
+
+include("IO/topologize.jl")
+export topologize
 
 end # module AsapToolkit
