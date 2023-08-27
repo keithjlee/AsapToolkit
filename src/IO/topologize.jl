@@ -7,9 +7,9 @@ function topologize(model::Asap.AbstractModel; one_based = false)
     i_starts = getindex.(indices, 1)
     i_ends = getindex.(indices, 2)
 
-    if one_based
-        i_starts .+= 1
-        i_ends .+= 1
+    if !one_based
+        i_starts .-= 1
+        i_ends .-= 1
     end
 
     i_support = [i for i = 1:model.nNodes if !all(model.nodes[i].dof)]
