@@ -5,6 +5,7 @@ include("Generation/Generators.jl")
 export generateframe
 export generatewarren2d
 export generatespaceframe
+export generate_spaceframebeam
 
 include("ForceAnalysis/ForceFunctions.jl")
 include("ForceAnalysis/Translations.jl")
@@ -17,6 +18,9 @@ export loadenvelopes
 include("Geometry/Displacements.jl")
 export ElementDisplacements
 export displacements
+
+include("Geometry/TrussGeometry.jl")
+export TrussGeo
 
 include("FDM/Translations.jl")
 export toNetwork
