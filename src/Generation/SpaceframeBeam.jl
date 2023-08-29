@@ -27,12 +27,16 @@ function generate_spaceframebeam(
 
     #top nodes 1
     top1_nodes = [TrussNode([x,y,z], :free, :top1) for (x,y,z) in zip(x_positions, y_top1, z_top1)]
+    first(top1_nodes).id = :pin
     fixnode!(first(top1_nodes), :pinned)
+    last(top1_nodes).id = :roller
     fixnode!(last(top1_nodes), :xfree)
 
     #top nodes 2
     top2_nodes = [TrussNode([x,y,z], :free, :top2) for (x,y,z) in zip(x_positions, y_top2, z_top2)]
+    first(top2_nodes).id = :pin
     fixnode!(first(top2_nodes), :pinned)
+    last(top2_nodes).id = :roller
     fixnode!(last(top2_nodes), :xfree)
 
     #make bottom elements
