@@ -1,11 +1,10 @@
-mutable struct Warren2D
+struct Warren2D <: AbstractGenerator
     model::TrussModel
     n::Integer
     dx::Real
     dy::Real
     section::Asap.AbstractSection
     type::Symbol
-    base::Vector{<:Real}
 end
 
 """
@@ -23,13 +22,12 @@ Default inputs:
 - `type::Symbol = :arch` :arch = long chord at bottom; :catenary = long chord at top
 - `base::Vector{Real} = [0, 0, 0]` base point for truss generation
 """
-function generatewarren2d(n::Integer,
+function Warren2D(n::Integer,
         dx::Real,
         dy::Real,
         section::Asap.AbstractSection;
         load = [0., -1., 0.],
-        type = :arch,
-        base = [0., 0., 0.])
+        type = :arch)
 
     @assert n % 2 != 0 "n must be odd"
     @assert type == :arch || type == :catenary "type must be :arch or :catenary"
@@ -55,7 +53,7 @@ function generatewarren2d(n::Integer,
     for i = 1:n
         xposition = dx * (i - 1)
 
-        node = TrussNode([xposition, 0., 0.] .+ base, :free)
+        node = TrussNode([xposition, 0., 0.], :free)
         if i == 1
             node.dof = [false, false, false]
             node.id = :pin
@@ -126,18 +124,17 @@ function generatewarren2d(n::Integer,
     solve!(model)
 
     #collect data
-    truss = Warren2D(model, n, dx, dy, section, type, base)
+    truss = Warren2D(model, n, dx, dy, section, type)
 
     #output
     return truss
 end
 
-function generatewarren2d(xpositions::Vector{<:Real},
+function Warren2D(xpositions::Vector{<:Real},
     ypositions::Vector{<:Real},
     ypositions2::Vector{<:Real},
     section::Asap.AbstractSection;
-    type = :arch,
-    base = [0., 0., 0.])
+    type = :arch)
 
     @assert length(xpositions) == length(ypositions) == length(ypositions2) + 1
     @assert type == :arch || type == :catenary "type must be :arch or :catenary"
@@ -164,7 +161,7 @@ function generatewarren2d(xpositions::Vector{<:Real},
     ## generate long chord up to symmetry
     for (x, y) in zip(xpositions, ypositions)
 
-        node = TrussNode([x, y, 0.] .+ base, :free)
+        node = TrussNode([x, y, 0.], :free)
         if i == 1
             node.dof = [false, false, false]
             node.id = :pin
@@ -180,10 +177,9 @@ function generatewarren2d(xpositions::Vector{<:Real},
 
     ## generate other side of symmetry
     Lhalf = last(xpositions)
-    base2 = [Lhalf, 0., 0.] .+ base
     incs = Lhalf .- reverse(xpositions[1:end-1])
     for (inc, y) in zip(incs, reverse(ypositions[1:end-1]))
-        node = TrussNode(base2 .+ [inc, y, 0.], :free)
+        node = TrussNode([inc, y, 0.], :free)
         node.id = longid
         push!(nodes, node)
         push!(longids, count)
@@ -199,7 +195,7 @@ function generatewarren2d(xpositions::Vector{<:Real},
 
         xposition = mean(xpositions[i:i+1])
 
-        node = TrussNode([xposition, ypositions2[i], 0.] .+ base, :free)
+        node = TrussNode([xposition, ypositions2[i], 0.], :free)
         node.id = shortid
 
         push!(nodes, node)
@@ -260,8 +256,6 @@ function generatewarren2d(xpositions::Vector{<:Real},
     solve!(model)
 
     #collect data
-    # truss = Warren2D(model, n, dx, dy, section, type, base)
+    truss = Warren2D(model, n, dx, dy, section, type)
 
-    #output
-    return model
 end

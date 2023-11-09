@@ -1,12 +1,12 @@
 data = XLSX.readdata(joinpath(@__DIR__, "data/aisc-shapes-database-v15.0.xlsx"), "Database v15.0!CH2:ED2041")
 
-Wrange = 1:283
-Crange = 352:383
-Lrange = 424:560
-WTrange = 561:843
-LLrange = 886:1524
-HSSRectrange = 1525:1912
-HSSRoundrange = 1913:2040
+const Wrange = 1:283
+const Crange = 352:383
+const Lrange = 424:560
+const WTrange = 561:843
+const LLrange = 886:1524
+const HSSRectrange = 1525:1912
+const HSSRoundrange = 1913:2040
 names = data[:,1]
 
 # column index dictionary
