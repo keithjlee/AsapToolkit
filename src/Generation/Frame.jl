@@ -1,4 +1,4 @@
-mutable struct Frame <: AbstractGenerator
+struct Frame <: AbstractGenerator
     model::Model
     nx::Integer
     dx::Real
