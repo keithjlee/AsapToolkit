@@ -1,4 +1,4 @@
-mutable struct Frame
+mutable struct Frame <: AbstractGenerator
     model::Model
     nx::Integer
     dx::Real
@@ -55,7 +55,7 @@ Optional inputs:
 - `joistPsi::Real = π/2` Angle of roll Ψ for secondary beam LCS
 - `base::Vector{Real} = [0, 0, 0]` base point for frame grid generation 
 """
-function generateframe(nx::Integer,
+function Frame(nx::Integer,
         dx::Real,
         ny::Integer,
         dy::Real,

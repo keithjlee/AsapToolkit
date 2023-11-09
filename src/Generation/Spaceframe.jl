@@ -1,5 +1,5 @@
-struct SpaceFrame
-    truss::TrussModel
+struct SpaceFrame <: AbstractGenerator
+    model::TrussModel
     nx::Integer
     dx::Real
     ny::Integer
@@ -20,7 +20,7 @@ struct SpaceFrame
 end
 
 
-function generatespaceframe(nx::Integer,
+function SpaceFrame(nx::Integer,
         dx::Real,
         ny::Integer,
         dy::Real,
@@ -185,13 +185,13 @@ function generatespaceframe(nx::Integer,
     loads  = [NodeForce(node, load) for node in flatnodes if node.id != :support]
 
     #assemble
-    truss = TrussModel(flatnodes, elements, loads)
-    solve!(truss)
+    model = TrussModel(flatnodes, elements, loads)
+    solve!(model)
 
-    isupport = findall(truss.nodes, :support)
+    isupport = findall(model.nodes, :support)
 
 
-    spaceframe = SpaceFrame(truss,
+    spaceframe = SpaceFrame(model,
         nx,
         dx,
         ny,
@@ -213,7 +213,7 @@ function generatespaceframe(nx::Integer,
     return spaceframe
 end
 
-function generatespaceframe(nx::Integer,
+function SpaceFrame(nx::Integer,
     dx::Real,
     ny::Integer,
     dy::Real,
@@ -413,15 +413,15 @@ function generatespaceframe(nx::Integer,
     loads  = [NodeForce(node, load) for node in flatnodes if node.id != :support]
 
     #assemble
-    truss = TrussModel(flatnodes, elements, loads)
-    solve!(truss)
+    model = TrussModel(flatnodes, elements, loads)
+    solve!(model)
 
-    isupport = findall(truss.nodes, :support)
-
-
+    isupport = findall(model.nodes, :support)
 
 
-    spaceframe = SpaceFrame(truss,
+
+
+    spaceframe = SpaceFrame(model,
         nx,
         dx,
         ny,
