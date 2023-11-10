@@ -23,9 +23,6 @@ include("FDM/Translations.jl")
 export toNetwork
 export toTruss
 
-include("Sizing/CISCnaive.jl")
-export trusssizer
-
 include("SteelSections/SteelSections.jl")
 
 include("IO/topologize.jl")
