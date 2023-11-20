@@ -1,4 +1,4 @@
-struct TrussFrame
+struct TrussFrame <: AbstractGenerator
     model::TrussModel
     nx::Integer
     dx::Real
@@ -8,7 +8,7 @@ struct TrussFrame
     single_base::Bool
     loaded_nodes::Symbol
 
-    function TrussFrame(nx::Integer, dx::Real, ny::Integer, dy::Real, section::Asap.AbstractGenerator, load = [0., -10., 0.]; single_base = false, loaded_nodes = :row2)
+    function TrussFrame(nx::Integer, dx::Real, ny::Integer, dy::Real, section::Asap.AbstractSection, load = [0., -10., 0.]; single_base = false, loaded_nodes = :row2)
 
         #checks
         @assert nx % 2 == 0 "nx must be even"
