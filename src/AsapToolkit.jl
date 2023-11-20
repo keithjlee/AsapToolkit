@@ -10,7 +10,7 @@ include("ForceAnalysis/ForceAnalysis.jl")
 export groupbyid
 export InternalForces
 export forces
-export loadenvelopes
+export load_envelopes
 
 include("Geometry/Displacements.jl")
 export ElementDisplacements
@@ -20,8 +20,8 @@ include("Geometry/TrussGeometry.jl")
 export TrussGeo
 
 include("FDM/Translations.jl")
-export toNetwork
-export toTruss
+export truss_to_network
+export network_to_truss
 
 include("SteelSections/SteelSections.jl")
 
