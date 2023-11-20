@@ -1,9 +1,9 @@
 """
-    toNetwork(model::TrussModel)
+    truss_to_network(model::TrussModel)
 
 Convert a solved truss model into an equivalent FDM Network. 
 """
-function toNetwork(model::TrussModel)
+function truss_to_network(model::TrussModel)
     if !model.processed || isnothing(model.u)
         error("Analyze truss model before conversion")
     end
@@ -53,11 +53,11 @@ function toNetwork(model::TrussModel)
 end
 
 """
-    toTruss(network::Network, section::AbstractSection)
+    network_to_truss(network::Network, section::AbstractSection)
 
 Convert a solved FDM Network into an equivalent truss model with a given section. All fixed nodes are converted into pinned boundary conditions.
 """
-function toTruss(network::Network, section::Asap.AbstractSection)
+function network_to_truss(network::Network, section::Asap.AbstractSection)
     if !network.processed
         error("Analyze network before conversion")
     end

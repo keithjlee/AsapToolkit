@@ -1,7 +1,7 @@
 """
 Accumlate the internal forces cause by a given load to the current element
 """
-function accumulateforce!(load::LineLoad, 
+function accumulate_force!(load::LineLoad, 
     xvals::Vector{Float64}, 
     P::Vector{Float64},
     My::Vector{Float64}, 
@@ -32,7 +32,7 @@ end
 """
 Accumlate the internal forces cause by a given load to the current element
 """
-function accumulateforce!(load::PointLoad, 
+function accumulate_force!(load::PointLoad, 
     xvals::Vector{Float64}, 
     P::Vector{Float64},
     My::Vector{Float64}, 
@@ -106,7 +106,7 @@ function InternalForces(element::Element, model::Model; resolution = 20)
 
     # accumulate loads
     for load in model.loads[element.loadIDs]
-        accumulateforce!(load,
+        accumulate_force!(load,
             xinc,
             P,
             My,
@@ -150,7 +150,7 @@ function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; res
 
     # accumulate loads
     for load in loads[element.loadIDs]
-        accumulateforce!(load,
+        accumulate_force!(load,
             xinc,
             P,
             My,
@@ -204,7 +204,7 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
 
         # accumulate loads
         for load in model.loads[element.loadIDs]
-            accumulateforce!(load,
+            accumulate_force!(load,
                 xinc,
                 P,
                 My,
@@ -271,11 +271,11 @@ struct ForceEnvelopes
 end
 
 """
-    loadenvelopes(model::Model, loads::Vector{Vector{<:Load}})
+    load_envelopes(model::Model, loads::Vector{Vector{<:Load}})
 
 Get the high/low internal forces for a series of external loads
 """
-function loadenvelopes(model::Model, loads::Vector{Vector}, increment::Real)
+function load_envelopes(model::Model, loads::Vector{Vector}, increment::Real)
     #
     envelopes = Vector{ForceEnvelopes}()
 

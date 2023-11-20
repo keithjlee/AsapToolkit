@@ -76,7 +76,7 @@ Where `increment` is the absolute sampling distance along each element (not the 
 ## Load envelopes
 If the internal forces of an element across multiple load cases is desire, one can use:
 ```julia
-loadenvelopes(model::Model, loads::Vector{Vector}, increment::Real)
+load_envelopes(model::Model, loads::Vector{Vector}, increment::Real)
 ```
 This generates a vector of `ForceEnvelopes` for each element, which stores the lower/upper bounds of internal forces:
 ```julia
