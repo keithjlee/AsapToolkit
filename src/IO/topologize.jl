@@ -1,6 +1,6 @@
 function topologize(model::Asap.AbstractModel; one_based = false)
 
-    xyz = nodePositions(model)
+    xyz = node_positions(model)
 
     indices = getproperty.(model.elements, :nodeIDs)
 
