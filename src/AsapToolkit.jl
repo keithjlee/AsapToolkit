@@ -16,8 +16,7 @@ include("Geometry/Displacements.jl")
 export ElementDisplacements
 export displacements
 
-include("Geometry/TrussGeometry.jl")
-export TrussGeo
+include("Geometry/Geometry.jl")
 
 include("FDM/Translations.jl")
 export truss_to_network
