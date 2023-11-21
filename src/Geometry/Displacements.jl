@@ -77,8 +77,8 @@ function accumulatedisp!(
     R = load.element.R[1:3, 1:3]
     L = load.element.length
     E = load.element.section.E
-    Istrong = load.element.section.Izz
-    Iweak = load.element.section.Iyy
+    Istrong = load.element.section.Ix
+    Iweak = load.element.section.Iy
 
     release = load.element.release
 
@@ -104,8 +104,8 @@ function accumulatedisp!(
     R = load.element.R[1:3, 1:3]
     L = load.element.length
     E = load.element.section.E
-    Istrong = load.element.section.Izz
-    Iweak = load.element.section.Iyy
+    Istrong = load.element.section.Ix
+    Iweak = load.element.section.Iy
     release = load.element.release
     frac = load.position
 
