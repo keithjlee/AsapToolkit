@@ -34,7 +34,7 @@ struct GridNetwork <: AbstractGenerator
         elseif support == :y
             support_indices = index_matrix[:, [1, nx+1]]
         else
-            support_indices = [index_matrix[[1, ny+1], :]; index_matrix[2:ny, [1, nx+1]]]
+            support_indices = [index_matrix[[1, ny+1], :][:]; index_matrix[2:ny, [1, nx+1]][:]]
         end
 
         #make nodes
