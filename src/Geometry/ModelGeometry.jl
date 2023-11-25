@@ -10,6 +10,12 @@ struct ModelGeo
     max_abs_moment::Float64
     areas::Vector{Float64}
     max_area::Float64
+    Ix::Vector{Float64}
+    max_Ix::Float64
+    Iy::Vector{Float64}
+    max_Iy::Float64
+    J::Vector{Float64}
+    max_J::Float64
     lengths::Vector{Float64}
     element_vectors::Vector{Vector{Float64}}
     element_vectors_xy::Vector{Vector{Float64}}
@@ -30,8 +36,19 @@ struct ModelGeo
         moment_magnitudes = vcat([[norm(moment[1:3]), norm(moment[4:end])] for moment in moments]...)
         max_abs_moment = maximum(moment_magnitudes)
 
-        areas = getproperty.(getproperty.(model.elements, :section), :A)
+        sections = getproperty.(model.elements, :section)
+
+        areas = getproperty.(sections, :A)
         max_area = maximum(areas)
+
+        Ix = getproperty.(sections, :Ix)
+        max_Ix = maximum(Ix)
+
+        Iy = getproperty.(sections, :Iy)
+        max_Iy = maximum(Iy)
+
+        J = getproperty.(sections, :J)
+        max_J = maximum(J)
 
         element_vectors = Asap.localx.(model.elements)
         element_vectors_xy = [evec[1:2] for evec in element_vectors]
@@ -48,6 +65,12 @@ struct ModelGeo
             max_abs_moment,
             areas,
             max_area,
+            Ix,
+            max_Ix,
+            Iy,
+            max_Iy,
+            J,
+            max_J,
             getproperty.(model.elements, :length),
             element_vectors,
             element_vectors_xy
