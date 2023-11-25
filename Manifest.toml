@@ -23,7 +23,7 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[deps.Asap]]
 deps = ["LinearAlgebra", "SparseArrays", "Statistics"]
-git-tree-sha1 = "b054891f82ec2999ac64d681990b704a5f6a89ba"
+git-tree-sha1 = "57170bc889c2e8b178ffaa4480114778b1ac4851"
 repo-rev = "main"
 repo-url = "https://github.com/keithjlee/Asap"
 uuid = "763a8c06-ba23-41fc-b385-b3b57b52403a"
