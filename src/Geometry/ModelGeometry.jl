@@ -25,7 +25,7 @@ struct ModelGeo
         nodes = getproperty.(model.nodes, :position)
         nodes_xy = [node[1:2] for node in nodes]
 
-        disp = getproperty.(model.nodes, :displacement)
+        disp = [node.displacement[1:3] for node in model.nodes]
         disp_xy = [d[1:2] for d in disp]
 
         indices = getproperty.(model.elements, :nodeIDs)
