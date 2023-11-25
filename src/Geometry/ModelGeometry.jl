@@ -6,8 +6,12 @@ struct ModelGeo
     indices::Vector{Vector{Int64}}
     forces::Vector{Float64}
     max_abs_force::Float64
-    moments::Vector{Vector{Float64}}
-    max_abs_moment::Float64
+    Tx::Vector{Float64}
+    max_abs_Tx::Float64
+    My::Vector{Float64}
+    max_abs_My::Float64
+    Mz::Vector{Float64}
+    max_abs_Mz::Float64
     areas::Vector{Float64}
     max_area::Float64
     Ix::Vector{Float64}
@@ -32,9 +36,16 @@ struct ModelGeo
         forces = getindex.(getproperty.(model.elements, :forces), 7)
         max_abs_force = maximum(abs.(forces))
 
-        moments = [element.forces[[4,5,6,10,11,12]] for element in model.elements]
-        moment_magnitudes = vcat([[norm(moment[1:3]), norm(moment[4:end])] for moment in moments]...)
-        max_abs_moment = maximum(moment_magnitudes)
+        element_forces = getproperty.(model.elements, :forces)
+
+        Tx = getindex.(element_forces, 10)
+        max_abs_Tx = maximum(abs.(Tx))
+
+        My = getindex.(element_forces, 11)
+        max_abs_My = maximum(abs.(My))
+
+        Mz = getindex.(element_forces, 12)
+        max_abs_Mz = maximum(abs.(Mz))
 
         sections = getproperty.(model.elements, :section)
 
@@ -61,8 +72,12 @@ struct ModelGeo
             indices,
             forces,
             max_abs_force,
-            moments,
-            max_abs_moment,
+            Tx,
+            max_abs_Tx,
+            My,
+            max_abs_My,
+            Mz,
+            max_abs_Mz,
             areas,
             max_area,
             Ix,
