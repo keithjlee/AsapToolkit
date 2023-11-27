@@ -4,8 +4,12 @@ struct ModelGeo
     disp::Vector{Vector{Float64}}
     disp_xy::Vector{Vector{Float64}}
     indices::Vector{Vector{Int64}}
-    forces::Vector{Float64}
-    max_abs_force::Float64
+    P::Vector{Float64}
+    max_abs_P::Float64
+    Vy::Vector{Float64}
+    max_abs_Vy::Float64
+    Vz::Vector{Float64}
+    max_abs_Vz::Float64
     Tx::Vector{Float64}
     max_abs_Tx::Float64
     My::Vector{Float64}
@@ -33,18 +37,25 @@ struct ModelGeo
         disp_xy = [d[1:2] for d in disp]
 
         indices = getproperty.(model.elements, :nodeIDs)
-        forces = getindex.(getproperty.(model.elements, :forces), 7)
-        max_abs_force = maximum(abs.(forces))
 
         element_forces = getproperty.(model.elements, :forces)
 
-        Tx = getindex.(element_forces, 10)
+        P = vcat([forces[[1,7]] .* [-1, 1] for forces in element_forces]...)
+        max_abs_P = maximum(abs.(P))
+
+        Vy = vcat([forces[[2,8]] .* [-1, 1] for forces in element_forces]...)
+        max_abs_Vy = maximum(abs.(Vy))
+
+        Vz = vcat([forces[[3,9]] .* [-1, 1] for forces in element_forces]...)
+        max_abs_Vz = maximum(abs.(Vz))
+
+        Tx = vcat([forces[[4,10]] .* [-1, 1] for forces in element_forces]...)
         max_abs_Tx = maximum(abs.(Tx))
 
-        My = getindex.(element_forces, 11)
+        My = vcat([forces[[5,11]] .* [-1, 1] for forces in element_forces]...)
         max_abs_My = maximum(abs.(My))
 
-        Mz = getindex.(element_forces, 12)
+        Mz = vcat([forces[[6,12]] .* [-1, 1] for forces in element_forces]...)
         max_abs_Mz = maximum(abs.(Mz))
 
         sections = getproperty.(model.elements, :section)
@@ -70,8 +81,12 @@ struct ModelGeo
             disp,
             disp_xy,
             indices,
-            forces,
-            max_abs_force,
+            P,
+            max_abs_P,
+            Vy,
+            max_abs_Vy,
+            Vz,
+            max_abs_Vz,
             Tx,
             max_abs_Tx,
             My,
