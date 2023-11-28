@@ -5,7 +5,7 @@ function to_truss(gs::GroundStructure, section::Asap.AbstractSection; load = [1.
     nodes = [TrussNode([xy..., 0.], :free, :free) for xy in gs.xy]
 
     if support == :xy
-        isupport = [gs.igrid[[1,2],:][:]; gs.igrid[2:end-1, [1,2]][:]]
+        isupport = [gs.igrid[[1,end],:][:]; gs.igrid[2:end-1, [1,end]][:]]
     elseif support == :x
         isupport = gs.igrid[[1,end], :][:]
     elseif support == :y
@@ -33,7 +33,7 @@ function to_truss(gs::GroundStructure, section::Asap.AbstractSection; load = [1.
 
 end
 
-function to_frame(gs::GroundStructure, section::Asap.Section; load = [0., 0., -1.], support = :xy, planar = true, support_type = :pinned)
+function to_frame(gs::GroundStructure, section::Asap.Section; load = [0., 0., -1.], support = :xy, planar = false, support_type = :pinned)
 
     @assert in(support, [:xy, :x, :y, :corner])
     @assert in(support_type, [:pinned, :fixed])
@@ -41,7 +41,7 @@ function to_frame(gs::GroundStructure, section::Asap.Section; load = [0., 0., -1
     nodes = [Node([xy..., 0.], :free, :free) for xy in gs.xy]
 
     if support == :xy
-        isupport = [gs.igrid[[1,2],:][:]; gs.igrid[2:end-1, [1,2]][:]]
+        isupport = [gs.igrid[[1,end],:][:]; gs.igrid[2:end-1, [1,end]][:]]
     elseif support == :x
         isupport = gs.igrid[[1,end], :][:]
     elseif support == :y
