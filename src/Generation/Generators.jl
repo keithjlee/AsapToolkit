@@ -1,10 +1,14 @@
 abstract type AbstractGenerator end
 
-include("Frame.jl"); export Frame
-include("Spaceframe.jl"); export SpaceFrame
-include("Warren.jl"); export Warren2D
-include("SpaceframeBeam.jl"); export SpaceFrameBeam
-include("BakerTruss.jl"); export BakerTruss
-include("TrussFrame.jl"); export TrussFrame
-include("GridNetwork.jl"); export GridNetwork
-include("GridFrame.jl"); export GridFrame
+include("Frame.jl")
+include("Spaceframe.jl")
+include("Warren.jl")
+include("SpaceframeBeam.jl")
+include("BakerTruss.jl")
+include("TrussFrame.jl")
+include("GridNetwork.jl")
+include("GridFrame.jl")
+
+include("GroundStructure.jl")
+
+include("GroundStructureConversion.jl")

@@ -3,6 +3,21 @@ using Asap, LinearAlgebra, Statistics, Interpolations, SparseArrays
 using JSON
 
 include("Generation/Generators.jl")
+export Frame
+export SpaceFrame
+export Warren2D
+export SpaceFrameBeam
+export BakerTruss
+export TrussFrame
+export GridNetwork
+export GridFrame
+
+export XGroundStructure
+export DenseGroundStructure
+export BoundedGroundStructure
+
+export to_truss
+export to_frame
 
 include("ForceAnalysis/ForceFunctions.jl")
 include("ForceAnalysis/Translations.jl")
@@ -19,12 +34,14 @@ export displacements
 include("Geometry/Geometry.jl")
 
 include("FDM/Translations.jl")
-export truss_to_network
-export network_to_truss
+export to_network
 
 include("SteelSections/SteelSections.jl")
 
 include("IO/topologize.jl")
 export topologize
+
+include("General/general.jl")
+export clear_supports!
 
 end # module AsapToolkit

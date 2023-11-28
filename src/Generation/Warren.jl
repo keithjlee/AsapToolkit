@@ -20,7 +20,6 @@ Required inputs:
 
 Default inputs:
 - `type::Symbol = :arch` :arch = long chord at bottom; :catenary = long chord at top
-- `base::Vector{Real} = [0, 0, 0]` base point for truss generation
 """
 function Warren2D(n::Integer,
         dx::Real,
@@ -77,7 +76,7 @@ function Warren2D(n::Integer,
     for i = 1:n-1
         xposition = x0 + dx * (i - 1)
 
-        node = TrussNode([xposition, y, 0.] .+ base, :free)
+        node = TrussNode([xposition, y, 0.], :free)
         node.id = shortid
 
         push!(nodes, node)
