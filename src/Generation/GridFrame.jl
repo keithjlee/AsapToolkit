@@ -6,39 +6,50 @@ struct GridFrame <: AbstractGenerator
     dy::Real
     igrid::Matrix{Int64}
 
-    function GridFrame(nx::Integer, Lx::Real, ny::Integer, Ly::Real, section::Asap.Section; load = [0., 0., -1.], support = :corner, support_type = :pinned)
-
-        dx = Lx / nx
-        dy = Ly / ny
+    function GridFrame(Lx::Real, nx::Integer, Ly::Real, ny::Integer, section::Asap.Section; load = [0., 0., -1.], support = :corner, support_type = :pinned)
 
         @assert in(support, [:corner, :x, :y, :xy])
 
-        nodal_positions = Vector{Vector{Float64}}()
-        index_matrix = zeros(Int64, ny+1, nx+1)
+        x_positions = range(0, Lx, nx)
+        y_positions = range(0, Ly, ny)
+
+        dx = Lx / (nx-1)
+        dy = Ly / (ny-1)
+
+        xyz = Vector{Vector{Float64}}()
+        Xmatrix = zeros(ny, nx)
+        Ymatrix = zeros(ny, nx)
+        igrid = zeros(Int64, ny, nx)
 
         index = 1
-        for i = 1:nx+1
-            for j = 1:ny+1
-                position = [dx * (j-1), dy * (i-1), 0.]
-                push!(nodal_positions, position)
+        for iy = 1:nx
+            for ix = 1:ny
 
-                index_matrix[j, i] = index
+                x = x_positions[iy]
+                y = y_positions[ix]
+
+                igrid[ix, iy] = index
                 index += 1
+
+                push!(xyz, [x, y, 0.])
+                Xmatrix[ix, iy] = x
+                Ymatrix[ix, iy] = y
+
             end
         end
 
         if support == :corner
-            support_indices = [index_matrix[1, 1], index_matrix[ny+1, 1], index_matrix[1, nx+1], index_matrix[ny+1, nx+1]]
+            support_indices = [igrid[1, 1], igrid[ny, 1], igrid[1, nx], igrid[ny, nx]]
         elseif support == :x
-            support_indices = index_matrix[[1, ny+1], :]
+            support_indices = igrid[[1, ny], :]
         elseif support == :y
-            support_indices = index_matrix[:, [1, nx+1]]
+            support_indices = igrid[:, [1, nx]]
         else
-            support_indices = [index_matrix[[1, ny+1], :][:]; index_matrix[2:ny, [1, nx+1]][:]]
+            support_indices = [igrid[[1, ny], :][:]; igrid[2:ny-1, [1, nx]][:]]
         end
 
         #make nodes
-        nodes = [Node(pos, :free, :free) for pos in nodal_positions]
+        nodes = [Node(pos, :free, :free) for pos in xyz]
 
         #make support nodes
         for node in nodes[support_indices]
@@ -50,21 +61,18 @@ struct GridFrame <: AbstractGenerator
         elements = Vector{Element}()
 
         #horizontal elements
-        for i in axes(index_matrix, 1)
-            for j = 1:nx
-                
-                node_indices = index_matrix[i, [j, j+1]]
-
-                push!(elements, Element(nodes, node_indices, section))
+        for i = 1:ny
+            for j = 1:nx-1
+                index = [igrid[i,j], igrid[i,j+1]]
+                push!(elements, Element(nodes, index, section))
             end
         end
 
         #vertical elements
-        for j in axes(index_matrix, 2)
-            for i = 1:ny
-                node_indices = index_matrix[[i, i+1], j]
-
-                push!(elements, Element(nodes, node_indices, section))
+        for j = 1:nx
+            for i = 1:ny-1
+                index = [igrid[i,j], igrid[i+1,j]]
+                push!(elements, Element(nodes, index, section)) 
             end
         end
 
@@ -81,7 +89,7 @@ struct GridFrame <: AbstractGenerator
             dx,
             ny,
             dy,
-            index_matrix
+            igrid
         )
     end
 
