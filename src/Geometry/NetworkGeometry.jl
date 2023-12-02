@@ -1,4 +1,4 @@
-struct NetworkGeo
+struct NetworkGeo <: AbstractGeo
     nodes::Vector{Vector{Float64}}
     indices::Vector{Vector{Int64}}
     q::Vector{Float64}

@@ -3,7 +3,7 @@
 
 Utility structure for visualizing truss models
 """
-struct TrussGeo
+struct TrussGeo <: AbstractGeo
     nodes::Vector{Vector{Float64}}
     nodes_xy::Vector{Vector{Float64}}
     disp::Vector{Vector{Float64}}
