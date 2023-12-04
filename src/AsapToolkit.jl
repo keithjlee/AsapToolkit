@@ -43,5 +43,6 @@ export topologize
 
 include("General/general.jl")
 export clear_supports!
+export element_connectivity
 
 end # module AsapToolkit

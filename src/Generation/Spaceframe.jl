@@ -19,7 +19,23 @@ struct SpaceFrame <: AbstractGenerator
     iY2::Vector{Int64}
 end
 
+"""
+    SpaceFrame(nx::Integer,
+    dx::Real,
+    ny::Integer,
+    dy::Real,
+    dz::Real,
+    section::Asap.AbstractSection;
+    support = :corner,
+    load = [0., 0., -10.],
+    base = [0., 0., 0.])
 
+Generate a spaceframe truss model of planar bay spacing dx, dy, with nx, ny nodes in each direction, with roof thickness dz. Options for support include:
+- `:corner` pinned supports at the 4 corner bays (total of 16 pinned supports)
+- `:x` pinned supports along exterior nodes parallel to the global X direction
+- `:y` pinned supports along exterior nodes parallel to the global Y direction
+- `:xy` pinned supports along all exterior nodes
+"""
 function SpaceFrame(nx::Integer,
         dx::Real,
         ny::Integer,
