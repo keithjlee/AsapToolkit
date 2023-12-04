@@ -4,6 +4,7 @@ struct ModelGeo <: AbstractGeo
     disp::Vector{Vector{Float64}}
     disp_xy::Vector{Vector{Float64}}
     indices::Vector{Vector{Int64}}
+    indices_flat::Vector{Int64}
     P::Vector{Float64}
     max_abs_P::Float64
     Vy::Vector{Float64}
@@ -37,6 +38,7 @@ struct ModelGeo <: AbstractGeo
         disp_xy = [d[1:2] for d in disp]
 
         indices = getproperty.(model.elements, :nodeIDs)
+        indices_flat = vcat(indices...)
 
         element_forces = getproperty.(model.elements, :forces)
 
@@ -81,6 +83,7 @@ struct ModelGeo <: AbstractGeo
             disp,
             disp_xy,
             indices,
+            indices_flat,
             P,
             max_abs_P,
             Vy,

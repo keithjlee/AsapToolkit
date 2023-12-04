@@ -1,6 +1,7 @@
 struct NetworkGeo <: AbstractGeo
     nodes::Vector{Vector{Float64}}
     indices::Vector{Vector{Int64}}
+    indices_flat::Vector{Int64}
     q::Vector{Float64}
     max_abs_q::Float64
     forces::Vector{Float64}
@@ -13,6 +14,7 @@ struct NetworkGeo <: AbstractGeo
     function NetworkGeo(network::Network)
         nodes = [Vector(row) for row in eachrow(network.xyz)]
         indices = [[element.iStart, element.iEnd] for element in network.elements]
+        indices_flat = vcat(indices...)
 
         q = network.q
         max_abs_q = maximum(abs.(q))
@@ -30,6 +32,7 @@ struct NetworkGeo <: AbstractGeo
         new(
             nodes,
             indices,
+            indices_flat,
             q,
             max_abs_q,
             forces,

@@ -9,6 +9,7 @@ struct TrussGeo <: AbstractGeo
     disp::Vector{Vector{Float64}}
     disp_xy::Vector{Vector{Float64}}
     indices::Vector{Vector{Int64}}
+    indices_flat::Vector{Int64}
     forces::Vector{Float64}
     max_abs_force::Float64
     areas::Vector{Float64}
@@ -30,6 +31,8 @@ struct TrussGeo <: AbstractGeo
         disp_xy = [d[1:2] for d in disp]
 
         indices = getproperty.(model.elements, :nodeIDs)
+        indices_flat = vcat(indices...)
+
         forces = getindex.(getproperty.(model.elements, :forces), 2)
         max_abs_force = maximum(abs.(forces))
 
@@ -52,6 +55,7 @@ struct TrussGeo <: AbstractGeo
             disp,
             disp_xy,
             indices,
+            indices_flat,
             forces,
             max_abs_force,
             areas,
