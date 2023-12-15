@@ -271,11 +271,11 @@ struct ForceEnvelopes
 end
 
 """
-    load_envelopes(model::Model, loads::Vector{Vector{<:Load}})
+    load_envelopes(model::Model, loads::Vector{Vector{<:AbstractLoad}})
 
 Get the high/low internal forces for a series of external loads
 """
-function load_envelopes(model::Model, loads::Vector{Vector{<:Asap.Load}}, increment::Real)
+function load_envelopes(model::Model, loads::Vector{Vector{<:Asap.AbstractLoad}}, increment::Real)
     #
     envelopes = Vector{ForceEnvelopes}()
 
