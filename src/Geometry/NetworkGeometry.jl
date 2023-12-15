@@ -24,7 +24,7 @@ struct NetworkGeo <: AbstractGeo
 
         lengths = length.(network.elements)
 
-        element_vectors = Asap.localx.(network.elements; unit = false)
+        element_vectors = Asap.local_x.(network.elements; unit = false)
 
         load_positions = [load.point.position for load in network.loads]
         load_vectors = getproperty.(network.loads, :force)

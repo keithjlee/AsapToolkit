@@ -45,7 +45,7 @@ struct TrussGeo <: AbstractGeo
         load_vectors = getproperty.(model.loads, :value)
         load_vectors_xy = [load[1:2] for load in load_vectors]
 
-        element_vectors = Asap.localx.(model.elements)
+        element_vectors = Asap.local_x.(model.elements)
         element_vectors_xy = [evec[1:2] for evec in element_vectors]
 
 

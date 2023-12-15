@@ -74,7 +74,7 @@ struct ModelGeo <: AbstractGeo
         J = getproperty.(sections, :J)
         max_J = maximum(J)
 
-        element_vectors = Asap.localx.(model.elements)
+        element_vectors = Asap.local_x.(model.elements)
         element_vectors_xy = [evec[1:2] for evec in element_vectors]
 
         return new(
