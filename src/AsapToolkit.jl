@@ -1,4 +1,5 @@
 module AsapToolkit
+using Reexport
 using Asap, LinearAlgebra, Statistics, Interpolations, SparseArrays
 using JSON
 
@@ -44,5 +45,8 @@ export topologize
 include("General/general.jl")
 export clear_supports!
 export element_connectivity
+
+include("AsapSections/AsapSections.jl")
+@reexport using .AsapSections
 
 end # module AsapToolkit
