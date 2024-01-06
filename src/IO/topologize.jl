@@ -20,7 +20,9 @@ function topologize(model::Asap.AbstractModel; one_based = false)
         "z" => xyz[:, 3],
         "iStart" => i_starts,
         "iEnd" => i_ends,
-        "iNodes" => i_support
+        "iNodes" => i_support,
+        "axialForces" => axial_force.(model.elements),
+        "areas" => getproperty.(getproperty.(model.elements, :section), :A)
     )
 
     return out_dict
