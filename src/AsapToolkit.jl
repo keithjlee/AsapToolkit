@@ -40,7 +40,10 @@ export to_network
 include("SteelSections/SteelSections.jl")
 
 include("IO/topologize.jl")
+include("IO/GHAsap.jl")
 export topologize
+export GHmodel
+
 
 include("General/general.jl")
 export clear_supports!
