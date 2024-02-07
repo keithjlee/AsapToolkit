@@ -43,6 +43,7 @@ include("IO/topologize.jl")
 include("IO/GHAsap.jl")
 export topologize
 export GHmodel
+export GHsave
 
 
 include("General/general.jl")

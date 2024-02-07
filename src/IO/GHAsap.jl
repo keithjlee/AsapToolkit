@@ -231,3 +231,14 @@ struct GHmodel
     end
 
 end
+
+function GHsave(model::Asap.AbstractModel, filename::String)
+    if filename[end-4:end] != ".json"
+        filename *= ".json"
+    end
+
+    ghmodel = GHmodel(model)
+    open(filename, "w") do f
+        write(f, JSON.json(ghmodel))
+    end
+end
