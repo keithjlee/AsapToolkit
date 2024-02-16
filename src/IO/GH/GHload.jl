@@ -2,9 +2,9 @@ abstract type GHload end
 function GHload end
 
 struct GHnodeforce <: GHload
-    iNode::Int64
     value::Vector{Float64}
     id::String
+    iNode::Int64
 end
 
 function GHload(load::NodeForce)
@@ -13,13 +13,13 @@ function GHload(load::NodeForce)
     value = load.value
     id = isnothing(load.id) ? "" : string(load.id)
 
-    return GHnodeforce(i, value, id)
+    return GHnodeforce(value, id, i)
 end
 
 struct GHnodemoment <: GHload
-    iNode::Int64
     value::Vector{Float64}
     id::String
+    iNode::Int64
 end
 
 function GHload(load::NodeMoment)
@@ -28,14 +28,14 @@ function GHload(load::NodeMoment)
     value = load.value
     id = isnothing(load.id) ? "" : string(load.id)
 
-    return GHnodemoment(i, value, id)
+    return GHnodemoment(value, id, i)
 
 end
 
 struct GHlineload <: GHload
-    iElement::Int64
     value::Vector{Float64}
     id::String
+    iElement::Int64
 end
 
 function GHload(load::LineLoad)
@@ -44,15 +44,15 @@ function GHload(load::LineLoad)
     value = load.value
     id = isnothing(load.id) ? "" : string(load.id)
 
-    return GHlineload(i, value, id)
+    return GHlineload(value, id, i)
 
 end
 
 struct GHpointload <: GHload
-    iElement::Int64
-    x::Float64
     value::Vector{Float64}
     id::String
+    iElement::Int64
+    x::Float64
 end
 
 function GHload(load::PointLoad)
@@ -62,6 +62,10 @@ function GHload(load::PointLoad)
     id = isnothing(load.id) ? "" : string(load.id)
     x = load.position
 
-    return GHpointload(i, x, value, id)
+    return GHpointload(value, id, i, x)
+
+end
+
+function categorize_loads(loads::Vector{Asap.AbstractLoad})
 
 end

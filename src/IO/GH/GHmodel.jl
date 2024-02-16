@@ -1,7 +1,10 @@
 struct GHmodel
     nodes::Vector{GHnode}
     elements::Vector{GHelement}
-    loads::Vector{GHload}
+    nodeforces::Vector{GHnodeforce}
+    nodemoments::Vector{GHnodemoment}
+    lineloads::Vector{GHlineload}
+    pointloads::Vector{GHpointload}
     x::Vector{Float64}
     y::Vector{Float64}
     z::Vector{Float64}
