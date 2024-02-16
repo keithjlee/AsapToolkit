@@ -21,7 +21,7 @@ Convert an Asap model into a condensed geometric format for interpoperability wi
 """
 function GHmodel(model::Asap.AbstractModel)
 
-    model.process || (Asap.process!(model))
+    model.processed || (Asap.process!(model))
 
     nodes = GHnode.(model.nodes)
     elements = GHelement.(model.elements)
@@ -46,9 +46,9 @@ function GHmodel(model::Asap.AbstractModel)
     for i in eachindex(nodes)
 
         if all(nodes[i].dof)
-            push!(ifree, i)
+            push!(ifree, nodes[i].nodeID)
         else
-            push!(ifixed, i)
+            push!(ifixed, nodes[i].nodeID)
         end
 
         disp = nodes[i].displacement
