@@ -19,12 +19,20 @@ struct GHsection
     end
 end
 
+const release2bool = Dict(
+    :fixedfixed => [false, false, false, false, false, false],
+    :freefixed => [true, true, true, false, false, false],
+    :fixedfree => [false, false, false, true, true, true],
+    :freefree => [true, true, true, true, true, true],
+    :joist => [false, true, true, false, true, true]
+)
 
 struct GHelement
     iStart::Int64
     iEnd::Int64
     elementID::Int64
     section::GHsection
+    release::Vector{Bool}
     psi::Float64
     localx::Vector{Float64}
     localy::Vector{Float64}
@@ -42,8 +50,9 @@ struct GHelement
         id = isnothing(element.id) ? "" : string(element.id)
         forces = element.forces
         axialforce = forces[2]
+        release = fill(true, 6)
 
-        return new(istart, iend, elementID, section, psi, lx, ly, lz, forces, axialforce, id)
+        return new(istart, iend, elementID, section, release, psi, lx, ly, lz, forces, axialforce, id)
     end
     
     function GHelement(element::Element)
@@ -55,7 +64,8 @@ struct GHelement
         id = isnothing(element.id) ? "" : string(element.id)
         forces = element.forces
         axialforce = forces[7]
+        release = release2bool[element.release]
 
-        return new(istart, iend, elementID, section, psi, lx, ly, lz, forces, axialforce, id)
+        return new(istart, iend, elementID, section, release, psi, lx, ly, lz, forces, axialforce, id)
     end
 end

@@ -30,6 +30,8 @@ function GHmodel(model::Asap.AbstractModel)
     elements = GHelement.(model.elements)
     loads = GHload.(model.loads)
 
+    nodeforces, nodemoments, lineloads, pointloads = categorize_loads(loads)
+
     xyz = node_positions(model)
 
     x = xyz[:, 1]
@@ -63,7 +65,10 @@ function GHmodel(model::Asap.AbstractModel)
     return GHmodel(
         nodes,
         elements,
-        loads,
+        nodeforces,
+        nodemoments,
+        lineloads,
+        pointloads,
         x,
         y,
         z,

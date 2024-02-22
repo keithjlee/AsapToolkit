@@ -66,6 +66,25 @@ function GHload(load::PointLoad)
 
 end
 
-function categorize_loads(loads::Vector{Asap.AbstractLoad})
+const loadtype2vectorindex = Dict(
+    GHnodeforce => 1,
+    GHnodemoment => 2,
+    GHlineload => 3,
+    GHpointload => 4
+)
 
+function categorize_loads(loads::Vector{<:GHload})
+    nodeforces = Vector{GHnodeforce}()
+    nodemoments = Vector{GHnodemoment}()
+    lineloads = Vector{GHlineload}()
+    pointloads = Vector{GHpointload}()
+
+    load_collectors = [nodeforces, nodemoments, lineloads, pointloads]
+
+    for load in loads
+        i = loadtype2vectorindex[typeof(load)]
+        push!(load_collectors[i], load)
+    end
+
+    return load_collectors
 end
