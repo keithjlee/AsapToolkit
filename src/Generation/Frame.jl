@@ -1,3 +1,8 @@
+"""
+    Frame <: AbstractGenerator
+
+A multistory frame structure with joist-beam-column hierarchy
+"""
 struct Frame <: AbstractGenerator
     model::Model
     nx::Integer
@@ -26,11 +31,11 @@ struct Frame <: AbstractGenerator
 end
 
 """
-    generateFrame(nx::Integer,...)
+    Frame(nx::Integer,...)
 
 Generate a 3D frame model.
 
-Required inputs:
+# Required inputs
 - `nx::Integer` Number of bays in primary span direction
 - `dx::Real` Primary span length
 - `ny::Integer` Number of bays in secondary span direction
@@ -43,7 +48,7 @@ Required inputs:
 - `joistSection::Section` Section of secondary beams
 - `braceSection::Section` Section for lateral bracing
 
-Optional inputs:
+# Optional inputs
 - `diaphragm::Bool = false` Include floor diaphragm (as X braces between columns)
 - `diaphragmSection::Section = nothing` Element section for diaphragm members (defaults to braceSection)
 - `columnRelease::Symbol = :fixedfixed` DOF end release for column elements

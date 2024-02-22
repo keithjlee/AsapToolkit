@@ -5,6 +5,7 @@ using JSON
 
 include("Generation/Generators.jl")
 export Frame
+export CornerDome
 export SpaceFrame
 export Warren2D
 export SpaceFrameBeam
@@ -33,6 +34,10 @@ export ElementDisplacements
 export displacements
 
 include("Geometry/Geometry.jl")
+export TrussGeo
+export ModelGeo
+export NetworkGeo
+export Geo
 
 include("FDM/Translations.jl")
 export to_network

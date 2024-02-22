@@ -1,10 +1,9 @@
 abstract type AbstractGeo end
 
-include("TrussGeometry.jl"); export TrussGeo
-include("ModelGeometry.jl"); export ModelGeo
-include("NetworkGeometry.jl"); export NetworkGeo
+include("TrussGeometry.jl")
+include("ModelGeometry.jl")
+include("NetworkGeometry.jl")
 
-export Geo
 function Geo end
 
 Geo(model::TrussModel) = TrussGeo(model)

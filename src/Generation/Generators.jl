@@ -1,6 +1,7 @@
 abstract type AbstractGenerator end
 
 include("Frame.jl")
+include("CornerDome.jl")
 include("Spaceframe.jl")
 include("Warren.jl")
 include("SpaceframeBeam.jl")
