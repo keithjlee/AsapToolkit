@@ -12,7 +12,7 @@ struct TrussFrame <: AbstractGenerator
 
         #checks
         @assert nx % 2 == 0 "nx must be even"
-        @assert in(loadnodes, [:col1, :col2, :col3, :col4, :row1, :row2]) "loaded_nodes must be one of: :col1, :col2, :col3, :col4, :row1, :row2"
+        @assert in(loaded_nodes, [:col1, :col2, :col3, :col4, :row1, :row2]) "loaded_nodes must be one of: :col1, :col2, :col3, :col4, :row1, :row2"
     
         #left most columns
         col1 = [TrussNode([0., dy * n, 0.], :free, :col1) for n = 0:ny]
