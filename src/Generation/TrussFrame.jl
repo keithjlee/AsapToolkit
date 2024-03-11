@@ -55,7 +55,7 @@ struct TrussFrame <: AbstractGenerator
     
         e_c3 = [TrussElement(col3, [i, i+1], section, :col3chord) for i = 1:ny]
 
-        e_c4 = single_base ? [TrussElement(col4, [i, i+1], section, :col4chord) for i = 2:ny] : [TrussElement(col4, [i, i+1], section, :col4chord) for i = 2:ny]
+        e_c4 = single_base ? [TrussElement(col4, [i, i+1], section, :col4chord) for i = 2:ny] : [TrussElement(col4, [i, i+1], section, :col4chord) for i = 1:ny]
         
         #beam chords
         e_r1 = [TrussElement(row1, [i, i+1], section, :row1chord) for i = 1:nx-4]
