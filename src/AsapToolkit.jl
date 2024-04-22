@@ -5,7 +5,7 @@ using JSON
 
 include("Generation/Generators.jl")
 export Frame
-export CornerDome
+# export CornerDome
 export SpaceFrame
 export Warren2D
 export SpaceFrameBeam

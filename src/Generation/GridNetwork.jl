@@ -1,3 +1,37 @@
+"""
+    GridNetwork(nx, Lx, ny, Ly, q::Real = 1.0; load = [0., 0., 1.], support = :corner)
+
+Generate a grid-topology Force Density Network.
+
+# Arguments
+- `nx::Integer` number of bays in x direction
+- `dx::Real` bay spacing in x direction
+- `ny::Integer` number of bays in y direction
+- `dy::Real` bay spacing in y direction
+- `q::Real` force density of elements. Defaults to 1.0.
+
+# Optional arguments
+- `load = [0, 0, 1]` force applied to all free nodes
+- `support = :corner` nodes to fix. Choose from: :corner, :x, :y, :xy
+
+# Return
+Returns a `GridNetwork` structure.
+
+    struct GridNetwork <: AbstractGenerator
+        network::Network
+        nx::Integer
+        dx::Real
+        ny::Integer
+        dy::Real
+        igrid::Matrix{Int64}
+
+## Fields
+Along with bay spacing fields, additional fields are included in the returned `GridNetwork` struct:
+- `network::Network` FDM network constructed from parameters
+- `igrid::Matrix{Int64}` Matrix of nodal indices in relation to the generated grid
+
+
+"""
 struct GridNetwork <: AbstractGenerator
     network::Network
     nx::Integer

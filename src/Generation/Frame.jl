@@ -1,7 +1,32 @@
 """
     Frame <: AbstractGenerator
 
-A multistory frame structure with joist-beam-column hierarchy
+A multistory frame structure with joist-beam-column hierarchy.
+
+# Fields
+- `model` Asap model
+- `nx` number of bays in x direction
+- `dx` bay spacing in x direction
+- `ny` number of bays in y direction
+- `dy` bay spacing in y direction
+- `dz` column height
+- `joistSpacing` spacing of joists
+- `columnSection` Asap section used for columns
+- `primarySection` Asap section used for primary spans
+- `joistSection` Asap section used for joists
+- `braceSection` Asap section used for braces
+- `columnRelease` End release for columns
+- `primaryRelease` End release used for primary spans
+- `joistRelease` End release used for joists
+- `braceRelease` End release used for braces
+- `columnPsi` LCS rotation for columns
+- `primaryPsi` LCS rotation for primary spans
+- `joistPsi` LCS rotation for joists
+- `Base` Base point of Frame generator
+- `iExteriorXnodes` Indices of nodes that are parallel to the global X axis, are on the exterior ends of the frame, and coincide with primary-column intersections
+- `iExteriorYnodes` Indices of nodes that are parallel to the global Y axis, are on the exterior ends of the frame, and coincide with joist-column intersections
+- `iExteriorXjoists` Indices of elements that are parallel to the global Y axis and are on the exterior ends of the frame
+- `iExteriorYprimaries` indices of elements that are parallel to the global X axis and are on the exterior ends of the frame
 """
 struct Frame <: AbstractGenerator
     model::Model
@@ -31,11 +56,11 @@ struct Frame <: AbstractGenerator
 end
 
 """
-    Frame(nx::Integer,...)
+    Frame(nx, dx, ny, dy, nz, dz, joistSpacing, columnSection, primarySection, joistSection, braceSection)
 
 Generate a 3D frame model.
 
-# Required inputs
+# Arguments
 - `nx::Integer` Number of bays in primary span direction
 - `dx::Real` Primary span length
 - `ny::Integer` Number of bays in secondary span direction

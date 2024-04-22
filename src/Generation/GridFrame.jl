@@ -1,3 +1,38 @@
+"""
+    GridFrame(Lx, nx, Ly, ny, section; load = [0., 0., -1.], support = :corner, support_type = :pinned)
+
+Generate a grid-topology Asap model.
+
+# Arguments
+- `Lx::Real` total length in x direction
+- `nx::Integer` number of bays in x direction
+- `Ly::Real` total length in y direction
+- `ny::Integer` number of bays in y direction
+- `section::Asap.Section` cross section assigned to elements
+
+# Optional arguments
+- `load = [0, 0, 1]` force applied to all free nodes
+- `support = :corner` nodes to fix. Choose from: :corner, :x, :y, :xy
+- `support_type = :pinned` boundary condition on support nodes. See Asap.fixDict for valud entries
+
+# Return
+Returns a `GridFrame` structure.
+
+    struct GridFrame <: AbstractGenerator
+        model::Model
+        nx::Integer
+        dx::Real
+        ny::Integer
+        dy::Real
+        igrid::Matrix{Int64}
+
+## Fields
+Along with bay spacing fields, additional fields are included in the returned `GridNetwork` struct:
+- `network::Network` FDM network constructed from parameters
+- `igrid::Matrix{Int64}` Matrix of nodal indices in relation to the generated grid
+
+
+"""
 struct GridFrame <: AbstractGenerator
     model::Model
     nx::Integer

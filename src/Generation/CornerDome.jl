@@ -65,7 +65,7 @@ function CornerDome(nx::Integer, dx::Real, ny::Integer, dy::Real, dz::Real,inter
     #generate nodes for bottom plane
     bottomnodes = [TrussNode([dx * (i-1), 
         dy * (j-1), 
-        interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], :free, :bottom) for i in 1:nx+1, j in 1:ny+1]
+        interpolator(dx * (i-1) / xmax, dy * (j-1) / ymax)], :free, :bottom) for i in 1:nx+1, j in 1:ny+1]
     for node in bottomnodes
         node.id = :bottom
     end

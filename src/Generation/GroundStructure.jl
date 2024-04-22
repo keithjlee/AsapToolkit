@@ -1,5 +1,40 @@
 abstract type GroundStructure end
 
+"""
+    XGroundStructure(Lx, nx, Ly, ny)
+
+Returns a ground structure topology object.
+
+# Arguments
+- `Lx` length in x direction
+- `nx` number of bays in x direction
+- `Ly` length in y direction
+- `ny` number of bays in y direction
+
+# Return
+Returns a `XGroundStructure` object.
+
+    struct XGroundStructure <: GroundStructure
+        Lx::Float64
+        nx::Float64
+        dx::Float64
+        Ly::Float64
+        ny::Float64
+        dy::Float64
+        xy::Vector{Vector{Float64}}
+        Xmatrix::Matrix{Float64}
+        Ymatrix::Matrix{Float64}
+        igrid::Matrix{Int64}
+        ielements::Vector{Vector{Int64}}
+        C::SparseMatrixCSC{Int64, Int64}
+
+## Additional Fields
+- `igrid` Matrix of node indices with respect to the generated grid
+- `Xmatrix` Matrix of nodal x positions with respect to the generated grid
+- `Ymatrix` Matrix of nodal y positions with respect to the generated grid
+- `ielements` Element start/end nodal indices
+- `C` An [nelement × nnode] connectivity matrix
+"""
 struct XGroundStructure <: GroundStructure
     Lx::Float64
     nx::Float64
@@ -115,7 +150,41 @@ struct XGroundStructure <: GroundStructure
     end
 end
 
+"""
+    DenseGroundStructure(Lx, nx, Ly, ny)
 
+Returns a ground structure topology object.
+
+# Arguments
+- `Lx` length in x direction
+- `nx` number of bays in x direction
+- `Ly` length in y direction
+- `ny` number of bays in y direction
+
+# Return
+Returns a `DenseGroundStructure` object.
+
+    struct DenseGroundStructure <: GroundStructure
+        Lx::Float64
+        nx::Float64
+        dx::Float64
+        Ly::Float64
+        ny::Float64
+        dy::Float64
+        xy::Vector{Vector{Float64}}
+        Xmatrix::Matrix{Float64}
+        Ymatrix::Matrix{Float64}
+        igrid::Matrix{Int64}
+        ielements::Vector{Vector{Int64}}
+        C::SparseMatrixCSC{Int64, Int64}
+
+## Additional Fields
+- `igrid` Matrix of node indices with respect to the generated grid
+- `Xmatrix` Matrix of nodal x positions with respect to the generated grid
+- `Ymatrix` Matrix of nodal y positions with respect to the generated grid
+- `ielements` Element start/end nodal indices
+- `C` An [nelement × nnode] connectivity matrix
+"""
 struct DenseGroundStructure <: GroundStructure
     Lx::Float64
     nx::Float64
@@ -203,6 +272,42 @@ struct DenseGroundStructure <: GroundStructure
     end
 end
 
+"""
+    BoundedGroundStructure(Lx, nx, Ly, ny, ub)
+
+Returns a ground structure topology object.
+
+# Arguments
+- `Lx` length in x direction
+- `nx` number of bays in x direction
+- `Ly` length in y direction
+- `ny` number of bays in y direction
+- `ub` node-node length threshold to generate a connection
+
+# Return
+Returns a `BoundedGroundStructure` object.
+
+    struct BoundedGroundStructure <: GroundStructure
+        Lx::Float64
+        nx::Float64
+        dx::Float64
+        Ly::Float64
+        ny::Float64
+        dy::Float64
+        xy::Vector{Vector{Float64}}
+        Xmatrix::Matrix{Float64}
+        Ymatrix::Matrix{Float64}
+        igrid::Matrix{Int64}
+        ielements::Vector{Vector{Int64}}
+        C::SparseMatrixCSC{Int64, Int64}
+
+## Additional Fields
+- `igrid` Matrix of node indices with respect to the generated grid
+- `Xmatrix` Matrix of nodal x positions with respect to the generated grid
+- `Ymatrix` Matrix of nodal y positions with respect to the generated grid
+- `ielements` Element start/end nodal indices
+- `C` An [nelement × nnode] connectivity matrix
+"""
 struct BoundedGroundStructure <: GroundStructure
     Lx::Float64
     nx::Float64
