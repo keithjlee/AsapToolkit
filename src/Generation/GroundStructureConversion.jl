@@ -55,7 +55,7 @@ function to_frame(gs::GroundStructure, section::Asap.Section; load = [0., 0., -1
         node.id = :support
     end 
 
-    elements = [Element(nodes, id, section, :fixedfixed, :free) for id in gs.ielements]
+    elements = [Element(nodes, id, section, :free) for id in gs.ielements]
 
     loads = [NodeForce(node, load) for node in nodes[:free]]
 
