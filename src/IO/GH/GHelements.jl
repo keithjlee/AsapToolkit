@@ -42,7 +42,7 @@ struct GHelement
     id::String
 
     function GHelement(element::TrussElement)
-        istart, iend = element.nodeIDs .- 1
+        istart, iend = Asap.nodeids(element) .- 1
         elementID = element.elementID - 1
         section = GHsection(element.section)
         psi = element.Ψ
@@ -56,7 +56,7 @@ struct GHelement
     end
     
     function GHelement(element::Element)
-        istart, iend = element.nodeIDs .- 1
+        istart, iend = Asap.nodeids(element) .- 1
         elementID = element.elementID - 1
         section = GHsection(element.section)
         psi = element.Ψ

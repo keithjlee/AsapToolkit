@@ -36,11 +36,11 @@ function to_network(model::TrussModel)
     elset = Vector{FDMelement}()
 
     for element in model.elements
-        istart, iend = element.nodeIDs
+        istart, iend = Asap.nodeids(element)
         id = element.id
         q = last(element.forces) / element.length
 
-        el = FDMelement(nodeset, istart, iend, q)
+        el = FDMelement(nodeset[[istart, iend]]..., q)
         el.id = id
 
         push!(elset, el)
@@ -81,7 +81,7 @@ function to_truss(network::Network, section::Asap.AbstractSection)
 
     #convert elements
     for element in network.elements
-        te = TrussElement(nodeset, [element.iStart, element.iEnd], section)
+        te = TrussElement(nodeset[[element.iStart, element.iEnd]]..., section)
 
         te.id = element.id
 

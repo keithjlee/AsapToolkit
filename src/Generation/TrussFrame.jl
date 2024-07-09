@@ -49,20 +49,20 @@ struct TrussFrame <: AbstractGenerator
         row2 = [TrussNode([dx + dx * n, (ny - 1) * dy, 0.], :free, :row2) for n = 1:nx-3]
         
         #column chords
-        e_c1 = single_base ? [TrussElement(col1, [i, i+1], section, :col1chord) for i = 2:ny] : [TrussElement(col1, [i, i+1], section, :col1chord) for i = 1:ny]
+        e_c1 = single_base ? [TrussElement(col1[[i, i+1]]..., section, :col1chord) for i = 2:ny] : [TrussElement(col1[[i, i+1]]..., section, :col1chord) for i = 1:ny]
         
-        e_c2 = [TrussElement(col2, [i, i+1], section, :col2chord) for i = 1:ny]
+        e_c2 = [TrussElement(col2[[i, i+1]]..., section, :col2chord) for i = 1:ny]
     
-        e_c3 = [TrussElement(col3, [i, i+1], section, :col3chord) for i = 1:ny]
+        e_c3 = [TrussElement(col3[[i, i+1]]..., section, :col3chord) for i = 1:ny]
 
-        e_c4 = single_base ? [TrussElement(col4, [i, i+1], section, :col4chord) for i = 2:ny] : [TrussElement(col4, [i, i+1], section, :col4chord) for i = 1:ny]
+        e_c4 = single_base ? [TrussElement(col4[[i, i+1]]..., section, :col4chord) for i = 2:ny] : [TrussElement(col4[[i, i+1]]..., section, :col4chord) for i = 1:ny]
         
         #beam chords
-        e_r1 = [TrussElement(row1, [i, i+1], section, :row1chord) for i = 1:nx-4]
+        e_r1 = [TrussElement(row1[[i, i+1]]..., section, :row1chord) for i = 1:nx-4]
         push!(e_r1, TrussElement(col2[end], row1[1], section, :row1chord))
         push!(e_r1, TrussElement(row1[end], col3[end], section, :row1chord))
         
-        e_r2 = [TrussElement(row2, [i, i+1], section, :row2chord) for i = 1:nx-4]
+        e_r2 = [TrussElement(row2[[i, i+1]]..., section, :row2chord) for i = 1:nx-4]
         push!(e_r2, TrussElement(col2[end-1], row2[1], section, :row2chord))
         push!(e_r2, TrussElement(row2[end], col3[end-1], section, :row2chord))
         

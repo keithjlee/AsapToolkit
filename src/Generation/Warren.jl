@@ -89,7 +89,7 @@ function Warren2D(n::Integer,
     
     #long chords
     for i = 1:n-1
-        element = TrussElement(nodes, longids[i:i+1], section)
+        element = TrussElement(nodes[longids[i:i+1]]..., section)
         element.id = longid
 
         push!(elements, element)
@@ -97,7 +97,7 @@ function Warren2D(n::Integer,
 
     #short chords
     for i = 1:n-2
-        element = TrussElement(nodes, shortids[i:i+1], section)
+        element = TrussElement(nodes[shortids[i:i+1]]..., section)
         element.id = shortid
 
         push!(elements, element)
@@ -105,11 +105,11 @@ function Warren2D(n::Integer,
 
     #webs
     for i = 1:n-1
-        element = TrussElement(nodes, [longids[i], shortids[i]], section)
+        element = TrussElement(nodes[[longids[i], shortids[i]]]..., section)
         element.id = :web
         push!(elements, element)
 
-        element = TrussElement(nodes, [shortids[i], longids[i+1]], section)
+        element = TrussElement(nodes[[shortids[i], longids[i+1]]]..., section)
         element.id = :web
         push!(elements, element)
     end
@@ -221,7 +221,7 @@ function Warren2D(xpositions::Vector{<:Real},
 
     #long chords
     for i = 1:length(longids) - 1
-        element = TrussElement(nodes, longids[i:i+1], section)
+        element = TrussElement(nodes[longids[i:i+1]]..., section)
         element.id = longid
 
         push!(elements, element)
@@ -229,7 +229,7 @@ function Warren2D(xpositions::Vector{<:Real},
 
     #short chords
     for i = 1:length(shortids) - 1
-        element = TrussElement(nodes, shortids[i:i+1], section)
+        element = TrussElement(nodes[shortids[i:i+1]]..., section)
         element.id = shortid
 
         push!(elements, element)
@@ -237,11 +237,11 @@ function Warren2D(xpositions::Vector{<:Real},
 
     #webs
     for i = 1:length(longids) - 1
-        element = TrussElement(nodes, [longids[i], shortids[i]], section)
+        element = TrussElement(nodes[[longids[i], shortids[i]]]..., section)
         element.id = :web
         push!(elements, element)
 
-        element = TrussElement(nodes, [shortids[i], longids[i+1]], section)
+        element = TrussElement(nodes[[shortids[i], longids[i+1]]]..., section)
         element.id = :web
         push!(elements, element)
     end

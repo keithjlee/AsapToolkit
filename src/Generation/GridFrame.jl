@@ -99,7 +99,7 @@ struct GridFrame <: AbstractGenerator
         for i = 1:ny
             for j = 1:nx-1
                 index = [igrid[i,j], igrid[i,j+1]]
-                push!(elements, Element(nodes, index, section))
+                push!(elements, Element(nodes[index]..., section))
             end
         end
 
@@ -107,7 +107,7 @@ struct GridFrame <: AbstractGenerator
         for j = 1:nx
             for i = 1:ny-1
                 index = [igrid[i,j], igrid[i+1,j]]
-                push!(elements, Element(nodes, index, section)) 
+                push!(elements, Element(nodes[index]..., section)) 
             end
         end
 
