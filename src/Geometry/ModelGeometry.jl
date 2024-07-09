@@ -37,7 +37,7 @@ struct ModelGeo <: AbstractGeo
         disp = [node.displacement[1:3] for node in model.nodes]
         disp_xy = [d[1:2] for d in disp]
 
-        indices = getproperty.(model.elements, :nodeIDs)
+        indices = Asap.nodeids.(model.elements)
         indices_flat = vcat(indices...)
 
         element_forces = getproperty.(model.elements, :forces)

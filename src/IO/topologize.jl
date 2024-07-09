@@ -22,7 +22,7 @@ function topologize(model::Asap.AbstractModel; one_based = false, supplementary_
 
     xyz = node_positions(model)
 
-    indices = getproperty.(model.elements, :nodeIDs)
+    indices = Asap.nodeids(model.elements)
 
     i_starts = getindex.(indices, 1)
     i_ends = getindex.(indices, 2)
