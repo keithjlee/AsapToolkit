@@ -19,9 +19,9 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[deps.Asap]]
 deps = ["LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "349f28f03a90efb33ce3e94482be55e5600df095"
+git-tree-sha1 = "a773a385529482621ca97162e3fcd4d55401e038"
 uuid = "763a8c06-ba23-41fc-b385-b3b57b52403a"
-version = "0.2.0"
+version = "0.2.1"
 
 [[deps.AxisAlgorithms]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
