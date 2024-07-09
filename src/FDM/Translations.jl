@@ -36,7 +36,7 @@ function to_network(model::TrussModel)
     elset = Vector{FDMelement}()
 
     for element in model.elements
-        istart, iend = Asap.nodeids(element)
+        istart, iend = Asap.nodeids.(element)
         id = element.id
         q = last(element.forces) / element.length
 

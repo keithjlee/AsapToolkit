@@ -30,7 +30,7 @@ struct TrussGeo <: AbstractGeo
         disp = getproperty.(model.nodes, :displacement)
         disp_xy = [d[1:2] for d in disp]
 
-        indices = Asap.nodeids(model.elements)
+        indices = Asap.nodeids.(model.elements)
         indices_flat = vcat(indices...)
 
         forces = getindex.(getproperty.(model.elements, :forces), 2)
