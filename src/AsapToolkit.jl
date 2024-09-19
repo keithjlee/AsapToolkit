@@ -8,6 +8,7 @@ export Frame
 # export CornerDome
 export SpaceFrame
 export Warren2D
+export Pratt2D
 export SpaceFrameBeam
 export BakerTruss
 export TrussFrame
@@ -46,8 +47,6 @@ include("SteelSections/SteelSections.jl")
 
 include("IO/topologize.jl")
 include("IO/GH/GHAsap.jl")
-export topologize
-export GHmodel
 export GHsave
 
 
