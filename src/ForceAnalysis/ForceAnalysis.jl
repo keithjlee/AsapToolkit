@@ -241,9 +241,12 @@ end
 """
     forces(model::Model, increment::Real)
 
-Get the internal forces of all elements in a model
+Get the internal forces of all elements in a model.
+
+- `model::Model` structural model whose elements are analyzed
+- `increment::Real` distance between sampling points along the element
 """
-function forces(model::Model, increment::Real)
+function InternalForces(model::Model, increment::Real)
 
     results = Vector{InternalForces}()
 
