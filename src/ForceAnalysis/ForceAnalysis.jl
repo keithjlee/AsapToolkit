@@ -43,13 +43,13 @@ function accumulate_force!(load::PointLoad,
     # distributed load magnitudes in LCS
     px, py, pz = (R  * load.value) .* [1, -1, -1]
 
-    P .+= PPoint.(px, L, xvals, frac)
+    P .+= [PPoint(px, L, x, frac) for x in xvals]
 
-    My .+= MPoint.(load.element, py, L, xvals, frac)
-    Vy .+= VPoint.(load.element, py, L, xvals, frac)
+    My .+= [MPoint(load.element, py, L, x, frac) for x in xvals]
+    Vy .+= [VPoint(load.element, py, L, x, frac) for x in xvals]
 
-    Mz .+= MPoint.(load.element, pz, L, xvals, frac)
-    Vz .+= VPoint.(load.element, pz, L, xvals, frac)
+    Mz .+= [MPoint(load.element, pz, L, x, frac) for x in xvals]
+    Vz .+= [VPoint(load.element, pz, L, x, frac) for x in xvals]
 end
 
 """
