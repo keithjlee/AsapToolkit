@@ -1,3 +1,4 @@
+
 """
 Accumlate the internal forces cause by a given load to the current element
 """
@@ -11,22 +12,17 @@ function accumulate_force!(load::LineLoad,
 
     R = load.element.R[1:3, 1:3]
     L = load.element.length
-    release = load.element.release
 
     # distributed load magnitudes in LCS
     wx, wy, wz = (R  * load.value) .* [1, -1, -1]
 
-    # extract relevant function
-    mfunction = MLineLoad[release]
-    vfunction = VLineLoad[release]
+    P .+= [PLine(wx, L, x) for x in xvals]
 
-    P .+= PLine.(wx, L, xvals)
+    My .+= [MLine(load.element, wy, L, x) for x in xvals]
+    Vy .+= [VLine(load.element, wy, L, x) for x in xvals]
 
-    My .+= mfunction.(wy, L, xvals)
-    Vy .+= vfunction.(wy, L, xvals)
-
-    Mz .+= mfunction.(wz, L, xvals)
-    Vz .+= vfunction.(wz, L, xvals)
+    Mz .+= [MLine(load.element, wz, L, x) for x in xvals]
+    Vz .+= [VLine(load.element, wz, L, x) for x in xvals]
 end
 
 """
@@ -42,23 +38,18 @@ function accumulate_force!(load::PointLoad,
 
     R = load.element.R[1:3, 1:3]
     L = load.element.length
-    release = load.element.release
     frac = load.position
 
     # distributed load magnitudes in LCS
     px, py, pz = (R  * load.value) .* [1, -1, -1]
 
-    # extract relevant function
-    mfunction = MPointLoad[release]
-    vfunction = VPointLoad[release]
-
     P .+= PPoint.(px, L, xvals, frac)
 
-    My .+= mfunction.(py, L, xvals, frac)
-    Vy .+= vfunction.(py, L, xvals, frac)
+    My .+= MPoint.(load.element, py, L, xvals, frac)
+    Vy .+= VPoint.(load.element, py, L, xvals, frac)
 
-    Mz .+= mfunction.(pz, L, xvals, frac)
-    Vz .+= vfunction.(pz, L, xvals, frac)
+    Mz .+= MPoint.(load.element, pz, L, xvals, frac)
+    Vz .+= VPoint.(load.element, pz, L, xvals, frac)
 end
 
 """
@@ -126,7 +117,7 @@ Get internal force results for a given element from a set of loads
 function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; resolution = 20)
     
     #beam information
-    release = element.release
+    dofs = etype2DOF[typeof(element)]
     L = element.length
 
     #discretization
@@ -136,7 +127,7 @@ function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; res
     uglobal = [element.nodeStart.displacement; element.nodeEnd.displacement]
     
     # end forces that are relevant to the given element/release condition
-    Flocal = (element.R * element.K * uglobal) .* release2DOF[release]
+    Flocal = (element.R * element.K * uglobal) .* dofs
 
     # shear/moment acting at the *starting* point of an element in LCS
     Pstart, Vystart, Mystart, Vzstart, Mzstart = Flocal[[1, 2, 6, 3, 5]] .* [-1, 1, 1, 1, -1]
@@ -149,7 +140,7 @@ function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; res
     Vz = zero(Mz) .+ Vzstart
 
     # accumulate loads
-    for load in loads[element.loadIDs]
+    for load in loads
         accumulate_force!(load,
             xinc,
             P,
@@ -160,6 +151,18 @@ function InternalForces(element::Element, loads::Vector{<:Asap.ElementLoad}; res
     end
 
     return InternalForces(element, resolution, xinc, P, My, Vy, Mz, Vz)
+end
+
+
+function get_elemental_loads(model::Model)
+
+    element_to_loadids = [Int64[] for _ in 1:model.nElements]
+    for load in model.loads
+        push!(element_to_loadids[load.element.elementID], load.loadID)
+    end
+
+    return element_to_loadids
+
 end
 
 """
@@ -178,9 +181,12 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
 
     resolution = Int(round(resolution / length(elements)))
 
+    element_load_ids = get_elemental_loads(model)
+
     #beam information
-    for element in elements
-        release = element.release
+    for (element, loadids) in zip(elements, element_load_ids)
+
+        dofs = etype2DOF[typeof(element)]
         L = element.length
 
         #discretization
@@ -190,7 +196,7 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
         uglobal = [element.nodeStart.displacement; element.nodeEnd.displacement]
         
         # end forces that are relevant to the given element/release condition
-        Flocal = (element.R * element.K * uglobal) .* release2DOF[release]
+        Flocal = (element.R * element.K * uglobal) .* dofs
 
         # shear/moment acting at the *starting* point of an element in LCS
         Pstart, Vystart, Mystart, Vzstart, Mzstart = Flocal[[1, 2, 6, 3, 5]] .* [-1, 1, 1, 1, -1]
@@ -203,7 +209,7 @@ function InternalForces(elements::Vector{<:Asap.FrameElement}, model::Model; res
         Vz = zero(Mz) .+ Vzstart
 
         # accumulate loads
-        for load in model.loads[element.loadIDs]
+        for load in model.loads[loadids]
             accumulate_force!(load,
                 xinc,
                 P,
@@ -235,20 +241,22 @@ end
 """
     forces(model::Model, increment::Real)
 
-Get the internal forces of all elements in a model
+Get the internal forces of all elements in a model.
+
+- `model::Model` structural model whose elements are analyzed
+- `increment::Real` distance between sampling points along the element
 """
-function forces(model::Model, increment::Real)
+function InternalForces(model::Model, increment::Real)
 
     results = Vector{InternalForces}()
 
-    ids = groupbyid(model.elements)
+    loadids = get_elemental_loads(model)
 
-    for id in ids
-        elements = model.elements[id]
-        L = sum(getproperty.(elements, :length))
-        n = max(Int(round(L / increment)), 2)
+    for (element, loadset) in zip(model.elements, loadids)
+    
+        n = max(Int(round(element.length / increment)), 2)
 
-        push!(results, InternalForces(elements, model; resolution = n))
+        push!(results, InternalForces(element, model.loads[loadset]; resolution = n))
     end
 
     return results
