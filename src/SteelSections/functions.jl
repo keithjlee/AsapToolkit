@@ -32,9 +32,9 @@ function toASAPframe(section::TorsionAllowed, E::Real, G::Real; unit = :mm)
         section.Iy,
         section.J]
 
-    factor = unitfactors[unit]
+    A, E, G, Ix, Iy, J = vals .* unitfactors[unit]
 
-    return Section((vals .* factor)...)
+    return Section(Material(E, G, 1.0, 0.3), A, Ix, Iy, J)
 
 end
 
@@ -42,12 +42,12 @@ trussunitfactors = Dict(:mm => [1., 1.],
     :m => [1e-6, 1e6],
     :in => [1/25.4^2, 25.4^2])
 
-function toASAPtruss(section::AbstractSection, E::Real; unit = :mm)
+function toASAPtruss(section::AbstractSteelSection, E::Real; unit = :mm)
     println("E should have distance unit in [mm]")
     @assert in(unit, keys(trussunitfactors))
 
-    vals = [section.A, E] .* trussunitfactors[unit]
+    A, E = [section.A, E] .* trussunitfactors[unit]
 
-    return TrussSection(vals...)
+    return Section(Material(E, 1.0, 1.0, 0.3), A)
 
 end

@@ -8,28 +8,23 @@ struct GHnode
     displacement::Vector{Float64}
     id::String
 
-    function GHnode(node::TrussNode)
-        position = node.position
-        dof = [node.dof; [true, true, true]]
-        nodeID = node.nodeID - 1
-        reaction = node.reaction
-        u = node.displacement
-        displacement = node.displacement[1:3]
+    function GHnode(node::Node, results::Union{Nothing, LinearResults})
+        position = Vector(node.position)
+        dof = Vector(node.fixity)
+        nodeID = node.index - 1
+
+        if isnothing(results)
+            rxn = zeros(6)
+            u = zeros(6)
+        else
+            rxn = Vector(reaction(results, node))
+            u = Vector(displacement(results, node))
+        end
+
+        disp = u[1:3]
         id = isnothing(node.id) ? "" : string(node.id)
 
-        return new(position, dof, nodeID, reaction, u, displacement, id)
-    end
-
-    function GHnode(node::Node)
-        position = node.position
-        dof = node.dof
-        nodeID = node.nodeID - 1
-        reaction = node.reaction
-        u = node.displacement
-        displacement = node.displacement[1:3]
-        id = isnothing(node.id) ? "" : string(node.id)
-
-        return new(position, dof, nodeID, reaction, u, displacement, id)
+        return new(position, dof, nodeID, rxn, u, disp, id)
     end
 end
 
@@ -43,15 +38,9 @@ struct GHsection
     Iy::Float64
     J::Float64
 
-    function GHsection(section::TrussSection)
-
-        return new(section.E, 1., section.A, 1., 1., 1.)
-
-    end
-
     function GHsection(section::Section)
 
-        return new(section.E, section.G, section.A, section.Ix, section.Iy, section.J)
+        return new(section.material.E, section.material.G, section.A, section.Ix, section.Iy, section.J)
 
     end
 end
@@ -64,17 +53,14 @@ const release2bool = Dict(
     :joist => [false, true, true, false, true, true]
 )
 
-const release2bool2 = Dict(
-    Asap.FixedFixed => [false, false, false, false, false, false],
-    Asap.FreeFixed => [true, true, true, false, false, false],
-    Asap.FixedFree => [false, false, false, true, true, true],
-    Asap.FreeFree => [true, true, true, true, true, true],
-    Asap.Joist => [false, true, true, false, true, true]
-)
+function convert_release_to_bool(element::Asap.FrameElement)
 
-function convert_release_to_bool(element::Element{T}) where {T}
+    release = release_symbol(element.ends)
 
-    return release2bool2[T]
+    #semi-rigid end springs have no classical release equivalent; treat as fixed
+    isnothing(release) && return fill(false, 6)
+
+    return release2bool[release]
 
 end
 
@@ -92,28 +78,30 @@ struct GHelement
     axialforce::Float64
     id::String
 
-    function GHelement(element::TrussElement)
-        istart, iend = Asap.nodeids(element) .- 1
-        elementID = element.elementID - 1
+    function GHelement(element::Asap.TrussElement, results::Union{Nothing, LinearResults})
+        istart, iend = (element.nodeStart.index, element.nodeEnd.index) .- 1
+        elementID = element.index - 1
         section = GHsection(element.section)
-        psi = element.Ψ
-        lx, ly, lz = element.LCS
+        psi = 0.
+        lcs = local_frame(element)
+        lx, ly, lz = [Vector(lcs[i, :]) for i in 1:3]
         id = isnothing(element.id) ? "" : string(element.id)
-        forces = element.forces
-        axialforce = forces[2]
+        forces = isnothing(results) ? zeros(12) : element_forces(results, element)
+        axialforce = forces[7]
         release = fill(true, 6)
 
         return new(istart, iend, elementID, section, release, psi, lx, ly, lz, forces, axialforce, id)
     end
-    
-    function GHelement(element::Element)
-        istart, iend = Asap.nodeids(element) .- 1
-        elementID = element.elementID - 1
+
+    function GHelement(element::Asap.FrameElement, results::Union{Nothing, LinearResults})
+        istart, iend = (element.nodeStart.index, element.nodeEnd.index) .- 1
+        elementID = element.index - 1
         section = GHsection(element.section)
         psi = element.Ψ
-        lx, ly, lz = element.LCS
+        lcs = local_frame(element)
+        lx, ly, lz = [Vector(lcs[i, :]) for i in 1:3]
         id = isnothing(element.id) ? "" : string(element.id)
-        forces = element.forces
+        forces = isnothing(results) ? zeros(12) : element_forces(results, element)
         axialforce = forces[7]
         release = convert_release_to_bool(element)
 
@@ -132,8 +120,8 @@ end
 
 function GHload(load::NodeForce)
 
-    i = load.node.nodeID - 1
-    value = load.value
+    i = load.node.index - 1
+    value = Vector(load.value)
     id = isnothing(load.id) ? "" : string(load.id)
 
     return GHnodeforce(value, id, i)
@@ -147,8 +135,8 @@ end
 
 function GHload(load::NodeMoment)
 
-    i = load.node.nodeID - 1
-    value = load.value
+    i = load.node.index - 1
+    value = Vector(load.value)
     id = isnothing(load.id) ? "" : string(load.id)
 
     return GHnodemoment(value, id, i)
@@ -161,10 +149,11 @@ struct GHlineload <: GHload
     iElement::Int64
 end
 
-function GHload(load::LineLoad)
+function GHload(load::DistributedLoad)
 
-    i = load.element.elementID - 1
-    value = load.value
+    i = load.element.index - 1
+    #uniform LineLoads serialize as their legacy [wx, wy, wz] vector
+    value = Vector(load.direction .* first(load.w))
     id = isnothing(load.id) ? "" : string(load.id)
 
     return GHlineload(value, id, i)
@@ -180,8 +169,8 @@ end
 
 function GHload(load::PointLoad)
 
-    i = load.element.elementID - 1
-    value = load.value
+    i = load.element.index - 1
+    value = Vector(load.value)
     id = isnothing(load.id) ? "" : string(load.id)
     x = load.position
 
@@ -232,16 +221,18 @@ struct GHmodel
 end
 
 """
-    GHmodel(model::Asap.AbstractModel)::GHmodel
+    GHmodel(model::Model)::GHmodel
 
 Convert an Asap model into a condensed geometric format for interpoperability with other software.
 """
-function GHmodel(model::Asap.AbstractModel)
+function GHmodel(model::Model)
 
-    model.processed || (Asap.process!(model))
+    isnothing(model.cache) && Asap.process!(model)
 
-    nodes = GHnode.(model.nodes)
-    elements = GHelement.(model.elements)
+    results = model.results
+
+    nodes = [GHnode(node, results) for node in model.nodes]
+    elements = [GHelement(element, results) for element in model.elements]
     loads = GHload.(model.loads)
 
     nodeforces, nodemoments, lineloads, pointloads = categorize_loads(loads)
@@ -299,11 +290,11 @@ end
 
 
 """
-    GHsave(model::Asap.AbstractModel, filename::String)
+    GHsave(model::Model, filename::String)
 
 Save an AsapModel as a .json file with GHmodel/GHnode/GHelement/GHload data structure. Add ".json" to the end of `filename` is optional.
 """
-function GHsave(model::Asap.AbstractModel, filename::String)
+function GHsave(model::Model, filename::String)
     if filename[end-4:end] != ".json"
         filename *= ".json"
     end

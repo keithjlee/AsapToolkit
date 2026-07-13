@@ -22,30 +22,32 @@ struct TrussGeo <: AbstractGeo
     load_vectors::Vector{Vector{Float64}}
     load_vectors_xy::Vector{Vector{Float64}}
 
-    function TrussGeo(model::TrussModel)
+    function TrussGeo(model::Model)
 
-        nodes = getproperty.(model.nodes, :position)
+        results = model.results
+
+        nodes = [Vector(node.position) for node in model.nodes]
         nodes_xy = [node[1:2] for node in nodes]
 
-        disp = getproperty.(model.nodes, :displacement)
+        disp = [displacement(results, node)[1:3] for node in model.nodes]
         disp_xy = [d[1:2] for d in disp]
 
-        indices = Asap.nodeids.(model.elements)
+        indices = [[element.nodeStart.index, element.nodeEnd.index] for element in model.elements]
         indices_flat = vcat(indices...)
 
-        forces = getindex.(getproperty.(model.elements, :forces), 2)
+        forces = [axial_force(results, element) for element in model.elements]
         max_abs_force = maximum(abs.(forces))
 
         areas = getproperty.(getproperty.(model.elements, :section), :A)
         max_area = maximum(areas)
 
-        load_positions = getproperty.(getproperty.(model.loads, :node), :position)
+        load_positions = [Vector(load.node.position) for load in model.loads]
         load_positions_xy = [load[1:2] for load in load_positions]
 
-        load_vectors = getproperty.(model.loads, :value)
+        load_vectors = [Vector(load.value) for load in model.loads]
         load_vectors_xy = [load[1:2] for load in load_vectors]
 
-        element_vectors = Asap.local_x.(model.elements)
+        element_vectors = [Vector(local_frame(element)[1, :]) for element in model.elements]
         element_vectors_xy = [evec[1:2] for evec in element_vectors]
 
 
@@ -60,7 +62,7 @@ struct TrussGeo <: AbstractGeo
             max_abs_force,
             areas,
             max_area,
-            getproperty.(model.elements, :length),
+            length.(model.elements),
             element_vectors,
             element_vectors_xy,
             load_positions,

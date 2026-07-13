@@ -1,5 +1,5 @@
 struct TrussFrame <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     nx::Integer
     dx::Real
     ny::Integer
@@ -15,38 +15,38 @@ struct TrussFrame <: AbstractGenerator
         @assert in(loaded_nodes, [:col1, :col2, :col3, :col4, :row1, :row2]) "loaded_nodes must be one of: :col1, :col2, :col3, :col4, :row1, :row2"
     
         #left most columns
-        col1 = [TrussNode([0., dy * n, 0.], :free, :col1) for n = 0:ny]
+        col1 = [Node([0., dy * n, 0.], :free, :col1) for n = 0:ny]
 
         #pin support
         fixnode!(col1[1], :pinned)
         col1[1].id = :support
         
         #col2 
-        col2 = [TrussNode([dx, dy * n, 0.], :free, :col2) for n = 0:ny]
+        col2 = [Node([dx, dy * n, 0.], :free, :col2) for n = 0:ny]
 
         #pin support
         fixnode!(col2[1], :pinned)
         col2[1].id = :support
         
         #col1
-        col3 = [TrussNode([(nx-1) * dx, dy * n, 0.], :free, :col3) for n = 0:ny]
+        col3 = [Node([(nx-1) * dx, dy * n, 0.], :free, :col3) for n = 0:ny]
 
         #pin support
         fixnode!(col3[1], :pinned)
         col3[1].id = :support
         
         #col2 
-        col4 = [TrussNode([nx * dx, dy * n, 0.], :free, :col4) for n = 0:ny]
+        col4 = [Node([nx * dx, dy * n, 0.], :free, :col4) for n = 0:ny]
 
         #pin support
         fixnode!(col4[1], :pinned)
         col4[1].id = :support
         
         #row1
-        row1 = [TrussNode([dx + dx * n, ny * dy, 0.], :free, :row1) for n = 1:nx-3]
+        row1 = [Node([dx + dx * n, ny * dy, 0.], :free, :row1) for n = 1:nx-3]
         
         #row 2
-        row2 = [TrussNode([dx + dx * n, (ny - 1) * dy, 0.], :free, :row2) for n = 1:nx-3]
+        row2 = [Node([dx + dx * n, (ny - 1) * dy, 0.], :free, :row2) for n = 1:nx-3]
         
         #column chords
         e_c1 = single_base ? [TrussElement(col1[[i, i+1]]..., section, :col1chord) for i = 2:ny] : [TrussElement(col1[[i, i+1]]..., section, :col1chord) for i = 1:ny]
@@ -91,7 +91,7 @@ struct TrussFrame <: AbstractGenerator
         elements = [e_c1; e_c2; e_c3; e_c4; e_r1; e_r2; w_c12; w_c34; w_r]
         loads = [NodeForce(node, load) for node in nodes[loaded_nodes]]
         
-        model = TrussModel(nodes, elements, loads)
+        model = Model(nodes, elements, loads)
         planarize!(model)
         solve!(model)
 

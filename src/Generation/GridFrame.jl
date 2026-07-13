@@ -34,7 +34,7 @@ Along with bay spacing fields, additional fields are included in the returned `G
 
 """
 struct GridFrame <: AbstractGenerator
-    model::Model
+    model::Model{Float64}
     nx::Integer
     dx::Real
     ny::Integer
@@ -93,13 +93,13 @@ struct GridFrame <: AbstractGenerator
         end
 
         #make elements
-        elements = Vector{Element}()
+        elements = Vector{AbstractElement{Float64}}()
 
         #horizontal elements
         for i = 1:ny
             for j = 1:nx-1
                 index = [igrid[i,j], igrid[i,j+1]]
-                push!(elements, Element(nodes[index]..., section))
+                push!(elements, FrameElement(nodes[index]..., section))
             end
         end
 
@@ -107,7 +107,7 @@ struct GridFrame <: AbstractGenerator
         for j = 1:nx
             for i = 1:ny-1
                 index = [igrid[i,j], igrid[i+1,j]]
-                push!(elements, Element(nodes[index]..., section)) 
+                push!(elements, FrameElement(nodes[index]..., section)) 
             end
         end
 

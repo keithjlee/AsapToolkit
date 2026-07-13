@@ -1,10 +1,10 @@
 """
-    truss_to_network(model::TrussModel)
+    to_network(model::Model)
 
-Convert a solved truss model into an equivalent FDM Network. 
+Convert a solved (truss) model into an equivalent FDM Network.
 """
-function to_network(model::TrussModel)
-    if !model.processed || isnothing(model.u)
+function to_network(model::Model)
+    if isnothing(model.results)
         error("Analyze truss model before conversion")
     end
 
@@ -12,10 +12,10 @@ function to_network(model::TrussModel)
     nodeset = Vector{FDMnode}()
 
     for node in model.nodes
-        pos = node.position
+        pos = Vector(node.position)
         id = node.id
 
-        dof = all(node.dof)
+        dof = all(node.fixity[1:3])
 
         fdmn = FDMnode(pos, dof)
         fdmn.id = id
@@ -27,18 +27,18 @@ function to_network(model::TrussModel)
     loadset = Vector{FDMload}()
 
     for load in model.loads
-        i = load.node.nodeID
+        i = load.node.index
 
-        push!(loadset, FDMload(nodeset, i, load.value))
+        push!(loadset, FDMload(nodeset, i, Vector(load.value)))
     end
 
     #convert elements
     elset = Vector{FDMelement}()
 
     for element in model.elements
-        istart, iend = Asap.nodeids.(element)
+        istart, iend = element.nodeStart.index, element.nodeEnd.index
         id = element.id
-        q = last(element.forces) / element.length
+        q = axial_force(model.results, element) / length(element)
 
         el = FDMelement(nodeset[[istart, iend]]..., q)
         el.id = id
@@ -53,7 +53,7 @@ function to_network(model::TrussModel)
 end
 
 """
-    network_to_truss(network::Network, section::AbstractSection)
+    to_truss(network::Network, section::AbstractSection)
 
 Convert a solved FDM Network into an equivalent truss model with a given section. All fixed nodes are converted into pinned boundary conditions.
 """
@@ -62,18 +62,18 @@ function to_truss(network::Network, section::Asap.AbstractSection)
         error("Analyze network before conversion")
     end
 
-    nodeset = Vector{TrussNode}()
-    elset = Vector{TrussElement}()
-    loadset = Vector{NodeForce}()
+    nodeset = Vector{Node{Float64}}()
+    elset = Vector{AbstractElement{Float64}}()
+    loadset = Vector{NodeForce{Float64}}()
 
-    #convert loads
+    #convert nodes
     for node in network.nodes
-        pos = [node.x, node.y, node.z]
+        pos = Vector(node.position)
         id = node.id
 
         dof = node.dof ? :free : :pinned
 
-        tn = TrussNode(pos, dof)
+        tn = Node(pos, dof)
         tn.id = id
 
         push!(nodeset, tn)
@@ -90,10 +90,10 @@ function to_truss(network::Network, section::Asap.AbstractSection)
 
     #convert loads
     for load in network.loads
-        push!(loadset, NodeForce(nodeset[load.index], load.force))
+        push!(loadset, NodeForce(nodeset[load.point.nodeID], Vector(load.force)))
     end
 
-    truss = TrussModel(nodeset, elset, loadset)
+    truss = Model(nodeset, elset, loadset)
     solve!(truss)
 
     return truss

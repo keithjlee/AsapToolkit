@@ -4,7 +4,7 @@
 A spaceframe dome supported at four corners
 
 # Fields
-- `model::TrussModel` structural model
+- `model::Model{Float64}` structural model
 - `nx::Integer` number of bays in x direction
 - `dx::Real` x-spacing
 - `ny::Integer` number of bays in y direction
@@ -13,7 +13,7 @@ A spaceframe dome supported at four corners
 - `section::Asap.AbstractSection` element cross section
 """
 struct CornerDome <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     nx::Integer
     dx::Real
     ny::Integer
@@ -29,7 +29,7 @@ end
 Create a CornerDome.
 
 # Arguments
-- `model::TrussModel` structural model
+- `model::Model{Float64}` structural model
 - `nx::Integer` number of bays in x direction
 - `dx::Real` x-spacing
 - `ny::Integer` number of bays in y direction
@@ -63,7 +63,7 @@ function CornerDome(nx::Integer, dx::Real, ny::Integer, dy::Real, dz::Real,inter
     ymax = dy * ny
 
     #generate nodes for bottom plane
-    bottomnodes = [TrussNode([dx * (i-1), 
+    bottomnodes = [Node([dx * (i-1), 
         dy * (j-1), 
         interpolator(dx * (i-1) / xmax, dy * (j-1) / ymax)], :free, :bottom) for i in 1:nx+1, j in 1:ny+1]
     for node in bottomnodes
@@ -74,7 +74,7 @@ function CornerDome(nx::Integer, dx::Real, ny::Integer, dy::Real, dz::Real,inter
     xinit = dx / 2
     yinit = dy / 2
 
-    topnodes = [TrussNode([dx * (i-1) + xinit, 
+    topnodes = [Node([dx * (i-1) + xinit, 
         dy * (j-1) + yinit, 
         dz + interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], 
         :free) for i in 1:nx, j in 1:ny]
@@ -85,7 +85,7 @@ function CornerDome(nx::Integer, dx::Real, ny::Integer, dy::Real, dz::Real,inter
     
 
     #elements
-    elements = Vector{TrussElement}()
+    elements = Vector{AbstractElement{Float64}}()
 
     #generate bottom horizontal elements
     #parallel to x
@@ -156,7 +156,7 @@ function CornerDome(nx::Integer, dx::Real, ny::Integer, dy::Real, dz::Real,inter
     loads  = [NodeForce(node, load) for node in flatnodes if node.id != :support]
 
     #assemble
-    truss = TrussModel(flatnodes, elements, loads)
+    truss = Model(flatnodes, elements, loads)
     solve!(truss)
 
     CornerDome(

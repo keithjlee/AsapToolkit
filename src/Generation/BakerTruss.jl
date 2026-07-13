@@ -4,14 +4,14 @@
 A 2D modified Baker truss with X-bracing in each bay offset to quarter points.
 
 # Fields
-- `model::TrussModel` structural model
+- `model::Model{Float64}` structural model
 - `nbays::Integer` number of bays across span
 - `dx::Real` x-spacing of bays
 - `dy::Real` y-spacing of bays
 - `section::Asap.AbstractSection` section applied to elements
 """
 struct BakerTruss <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     nbays::Integer
     dx::Real
     dy::Real
@@ -36,16 +36,16 @@ function BakerTruss(nbays::Integer, dx::Real, dy::Real, section::Asap.AbstractSe
     n = nbays + 1
 
     #generate bottom nodes
-    bottomnodes = Vector{TrussNode}()
+    bottomnodes = Vector{Node{Float64}}()
     for i = 1:n
         xposition = dx * (i - 1)
 
-        node = TrussNode([xposition, 0., 0.], :free)
+        node = Node([xposition, 0., 0.], :free)
         if i == 1
-            node.dof = [false, false, false]
+            fixnode!(node, :pinned)
             node.id = :pin
         elseif i == n
-            node.dof = [true, false, false]
+            node.fixity = vcat([true, false, false], trues(3))
             node.id = :roller
         else
             node.id = :bottom
@@ -55,11 +55,11 @@ function BakerTruss(nbays::Integer, dx::Real, dy::Real, section::Asap.AbstractSe
     end
 
     #generate top nodes
-    topnodes = Vector{TrussNode}()
+    topnodes = Vector{Node{Float64}}()
     for i = 1:n
         xposition = dx * (i - 1)
 
-        node = TrussNode([xposition, dy, 0.], :free, :top)
+        node = Node([xposition, dy, 0.], :free, :top)
 
         push!(topnodes, node)
     end
@@ -69,22 +69,22 @@ function BakerTruss(nbays::Integer, dx::Real, dy::Real, section::Asap.AbstractSe
     #left side
     x0 = .25dx #initial offset
 
-    webleft = Vector{TrussNode}()
+    webleft = Vector{Node{Float64}}()
     for i = 1:nbays/2
         xposition = x0 + (i - 1) * dx
 
-        node = TrussNode([xposition, dy/2, 0.], :free, :web)
+        node = Node([xposition, dy/2, 0.], :free, :web)
 
         push!(webleft, node)
     end
 
     #right side
     x0 = dx * (nbays/2 + 0.75)
-    webright = Vector{TrussNode}()
+    webright = Vector{Node{Float64}}()
     for i = 1:nbays/2
         xposition = x0 + (i - 1) * dx
 
-        node = TrussNode([xposition, dy/2, 0.], :free, :web)
+        node = Node([xposition, dy/2, 0.], :free, :web)
 
         push!(webright, node)
     end
@@ -103,7 +103,7 @@ function BakerTruss(nbays::Integer, dx::Real, dy::Real, section::Asap.AbstractSe
     verts = [TrussElement(n1, n2, section, :vertical) for (n1, n2) in zip(bottomnodes, topnodes)]
 
     #webs
-    webs = Vector{TrussElement}()
+    webs = Vector{AbstractElement{Float64}}()
     for i = 1:nbays
         #topleft
         push!(webs, TrussElement(webnodes[i], topnodes[i], section, :web))
@@ -120,7 +120,7 @@ function BakerTruss(nbays::Integer, dx::Real, dy::Real, section::Asap.AbstractSe
     elements = [bottomchord; topchord; verts; webs]
     loads = [NodeForce(node, load) for node in nodes if node.id == :bottom]
 
-    model = TrussModel(nodes, elements, loads)
+    model = Model(nodes, elements, loads)
     planarize!(model)
     solve!(model)
 

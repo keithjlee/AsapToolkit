@@ -1,10 +1,10 @@
 """
-    topology(model::Asap.AbstractModel; one_based = false, supplementary_data = nothing)
+    topologize(model::Model; one_based = false, supplementary_data = nothing)
 
 Export the topology of an Asap model as a JSON file.
 
 # Arguments
-- `model::Asap.AbstractModel` model to export
+- `model::Model` model to export (must be solved)
 
 ## Optional Arguments
 - `one_based::Bool = false` use 1-based indexing for topology
@@ -18,16 +18,16 @@ section_info = Dict(
 topologize(model; supplementary_data = section_info)
 ```
 """
-function topologize(model::Asap.AbstractModel; one_based = false, supplementary_data = nothing)
+function topologize(model::Model; one_based = false, supplementary_data = nothing)
+
+    isnothing(model.results) && error("Analyze model before export")
 
     xyz = node_positions(model)
 
-    indices = Asap.nodeids.(model.elements)
+    i_starts = [element.nodeStart.index for element in model.elements]
+    i_ends = [element.nodeEnd.index for element in model.elements]
 
-    i_starts = getindex.(indices, 1)
-    i_ends = getindex.(indices, 2)
-
-    i_support = [i for i = 1:model.nNodes if !all(model.nodes[i].dof)]
+    i_support = [i for i = 1:length(model.nodes) if !all(model.nodes[i].fixity)]
 
     if !one_based
         i_starts .-= 1
@@ -42,7 +42,7 @@ function topologize(model::Asap.AbstractModel; one_based = false, supplementary_
         "iStart" => i_starts,
         "iEnd" => i_ends,
         "iNodes" => i_support,
-        "axialForces" => axial_force.(model.elements),
+        "axialForces" => [axial_force(model.results, element) for element in model.elements],
         "areas" => getproperty.(getproperty.(model.elements, :section), :A)
     )
 

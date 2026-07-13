@@ -31,33 +31,35 @@ struct ModelGeo <: AbstractGeo
 
     function ModelGeo(model::Model)
 
-        nodes = getproperty.(model.nodes, :position)
+        results = model.results
+
+        nodes = [Vector(node.position) for node in model.nodes]
         nodes_xy = [node[1:2] for node in nodes]
 
-        disp = [node.displacement[1:3] for node in model.nodes]
+        disp = [displacement(results, node)[1:3] for node in model.nodes]
         disp_xy = [d[1:2] for d in disp]
 
-        indices = Asap.nodeids.(model.elements)
+        indices = [[element.nodeStart.index, element.nodeEnd.index] for element in model.elements]
         indices_flat = vcat(indices...)
 
-        element_forces = getproperty.(model.elements, :forces)
+        forcevectors = [element_forces(results, element) for element in model.elements]
 
-        P = vcat([forces[[1,7]] .* [-1, 1] for forces in element_forces]...)
+        P = vcat([forces[[1,7]] .* [-1, 1] for forces in forcevectors]...)
         max_abs_P = maximum(abs.(P))
 
-        Vy = vcat([forces[[2,8]] .* [-1, 1] for forces in element_forces]...)
+        Vy = vcat([forces[[2,8]] .* [-1, 1] for forces in forcevectors]...)
         max_abs_Vy = maximum(abs.(Vy))
 
-        Vz = vcat([forces[[3,9]] .* [-1, 1] for forces in element_forces]...)
+        Vz = vcat([forces[[3,9]] .* [-1, 1] for forces in forcevectors]...)
         max_abs_Vz = maximum(abs.(Vz))
 
-        Tx = vcat([forces[[4,10]] .* [-1, 1] for forces in element_forces]...)
+        Tx = vcat([forces[[4,10]] .* [-1, 1] for forces in forcevectors]...)
         max_abs_Tx = maximum(abs.(Tx))
 
-        My = vcat([forces[[5,11]] .* [-1, 1] for forces in element_forces]...)
+        My = vcat([forces[[5,11]] .* [-1, 1] for forces in forcevectors]...)
         max_abs_My = maximum(abs.(My))
 
-        Mz = vcat([forces[[6,12]] .* [-1, 1] for forces in element_forces]...)
+        Mz = vcat([forces[[6,12]] .* [-1, 1] for forces in forcevectors]...)
         max_abs_Mz = maximum(abs.(Mz))
 
         sections = getproperty.(model.elements, :section)
@@ -74,7 +76,7 @@ struct ModelGeo <: AbstractGeo
         J = getproperty.(sections, :J)
         max_J = maximum(J)
 
-        element_vectors = Asap.local_x.(model.elements)
+        element_vectors = [Vector(local_frame(element)[1, :]) for element in model.elements]
         element_vectors_xy = [evec[1:2] for evec in element_vectors]
 
         return new(
@@ -104,7 +106,7 @@ struct ModelGeo <: AbstractGeo
             max_Iy,
             J,
             max_J,
-            getproperty.(model.elements, :length),
+            length.(model.elements),
             element_vectors,
             element_vectors_xy
         )

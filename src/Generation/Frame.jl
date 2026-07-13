@@ -29,7 +29,7 @@ A multistory frame structure with joist-beam-column hierarchy.
 - `iExteriorYprimaries` indices of elements that are parallel to the global X axis and are on the exterior ends of the frame
 """
 struct Frame <: AbstractGenerator
-    model::Model
+    model::Model{Float64}
     nx::Integer
     dx::Real
     ny::Integer
@@ -53,6 +53,19 @@ struct Frame <: AbstractGenerator
     iExteriorYnodes::Vector{Integer}
     iExteriorXjoists::Vector{Integer}
     iExteriorYprimaries::Vector{Integer}
+end
+
+"""
+Split a member release into per-segment end conditions: the member's start
+springs go to the first segment, its end springs to the last, and all
+interior segment ends are rigid (continuous member).
+"""
+function split_release(release::Symbol, nsegments::Integer)
+    ends = EndConditions(release)
+
+    return [EndConditions(
+        s == 1 ? ends.e1 : rigid_end(),
+        s == nsegments ? ends.e2 : rigid_end()) for s = 1:nsegments]
 end
 
 """
@@ -83,7 +96,7 @@ Generate a 3D frame model.
 - `columnPsi::Real = 0` Angle of roll Ψ for column LCS
 - `primaryPsi::Real = π/2` Angle of roll Ψ for primary beam LCS
 - `joistPsi::Real = π/2` Angle of roll Ψ for secondary beam LCS
-- `base::Vector{Real} = [0, 0, 0]` base point for frame grid generation 
+- `base::Vector{Real} = [0, 0, 0]` base point for frame grid generation
 """
 function Frame(nx::Integer,
         dx::Real,
@@ -131,12 +144,11 @@ function Frame(nx::Integer,
     # columns
     #######
     #make columns
-    columns = Vector{Element}()
+    columns = Vector{AbstractElement{Float64}}()
     for i in 1:nx+1
         for j in 1:ny+1
             for k in 1:nz
-                el = Element(nodes[i,j,k], nodes[i,j,k+1], columnSection, columnRelease)
-                # el.Ψ = 0
+                el = FrameElement(nodes[i,j,k], nodes[i,j,k+1], columnSection; release = columnRelease)
                 el.Ψ = columnPsi
                 el.id = :column
                 push!(columns, el)
@@ -148,15 +160,39 @@ function Frame(nx::Integer,
     #####
     # primary beams
     #####
-    primaries = Vector{Element}()
+    # v1.0: BridgeElement no longer exists, so joist-primary intersections are
+    # generated explicitly — each primary beam is split into segments at the
+    # joist positions, with the member release distributed to the outermost
+    # segment ends.
+    njoists = Int(round(dx / joistSpacing))
+    joistfractions = collect(range(0, 1, njoists))[2:end-1]
+    nsegments = length(joistfractions) + 1
+
+    primaries = Vector{AbstractElement{Float64}}()
+    primarynodes = Vector{Node{Float64}}()
+    segmentreleases = split_release(primaryRelease, nsegments)
+
+    #interior joist nodes per primary beam, indexed [j, i, k] to mirror the
+    #legacy `primreshaped` layout (bridges spanned adjacent rows in j)
+    joistnodes = Array{Vector{Node{Float64}}}(undef, ny+1, nx, nz)
 
     for k in 2:nz+1
         for i in 1:nx
             for j in 1:ny+1
-                el = Element(nodes[i,j,k], nodes[i+1,j,k], primarySection, primaryRelease)
-                el.id = :primary
-                el.Ψ = primaryPsi
-                push!(primaries, el)
+                nstart = nodes[i,j,k]
+                nend = nodes[i+1,j,k]
+
+                #interior nodes at joist fractions
+                interiors = [Node(nstart.position + t * (nend.position - nstart.position), :free, :primarynode) for t in joistfractions]
+                append!(primarynodes, interiors)
+                joistnodes[j, i, k-1] = interiors
+
+                #primary segments
+                chain = [nstart; interiors; nend]
+                for s = 1:nsegments
+                    el = FrameElement(chain[s], chain[s+1], primarySection, segmentreleases[s], :primary; Ψ = primaryPsi)
+                    push!(primaries, el)
+                end
             end
         end
     end
@@ -165,24 +201,18 @@ function Frame(nx::Integer,
     # joists
     ######
 
-    primreshaped = reshape(primaries, ny+1, nx, nz)
+    secondaries = Vector{AbstractElement{Float64}}()
 
-    secondaries = Vector{Union{BridgeElement, Element}}()
-    njoists = Int(round(dx / joistSpacing))
-
-    #main bridge elements
+    #main joists spanning between adjacent primary beams
     for k in 1:nz
         for j = 1:nx
             for i = 1:ny
-                bridges = [BridgeElement(primreshaped[i,j,k], x, primreshaped[i+1,j,k], x, joistSection, joistRelease) for x in range(0,1,njoists)[2:end-1]]
-
-                for bridge in bridges
+                for f in eachindex(joistfractions)
+                    bridge = FrameElement(joistnodes[i,j,k][f], joistnodes[i+1,j,k][f], joistSection; release = joistRelease)
                     bridge.id = :joist
                     bridge.Ψ = joistPsi
+                    push!(secondaries, bridge)
                 end
-
-                push!(secondaries, bridges...)
-
             end
         end
     end
@@ -191,8 +221,7 @@ function Frame(nx::Integer,
     for i in 1:nx+1
         for j in 1:ny
             for k in 2:nz+1
-                bridge = Element(nodes[i,j,k], nodes[i,j+1,k], joistSection, joistRelease)
-                # bridge.Ψ = 0.
+                bridge = FrameElement(nodes[i,j,k], nodes[i,j+1,k], joistSection; release = joistRelease)
                 bridge.id = :joist
                 bridge.Ψ = joistPsi
                 push!(secondaries, bridge)
@@ -204,12 +233,12 @@ function Frame(nx::Integer,
     #braces
     #########
 
-    braces = Vector{Element}()
+    braces = Vector{AbstractElement{Float64}}()
     i = 1
     for j = [1, ny+1]
         for k = 1:nz
-            brace1 = Element(nodes[i,j,k], nodes[i+1,j,k+1], braceSection, braceRelease)
-            brace2 = Element(nodes[i+1,j,k], nodes[i,j,k+1], braceSection, braceRelease)
+            brace1 = FrameElement(nodes[i,j,k], nodes[i+1,j,k+1], braceSection; release = braceRelease)
+            brace2 = FrameElement(nodes[i+1,j,k], nodes[i,j,k+1], braceSection; release = braceRelease)
 
             brace1.id = brace2.id = :brace
             push!(braces, brace1, brace2)
@@ -219,8 +248,8 @@ function Frame(nx::Integer,
     j = 1
     for i = [1, nx+1]
         for k = 1:nz
-            brace1 = Element(nodes[i,j,k], nodes[i, j+1, k+1], braceSection, braceRelease)
-            brace2 = Element(nodes[i,j+1,k], nodes[i,j,k+1], braceSection, braceRelease)
+            brace1 = FrameElement(nodes[i,j,k], nodes[i, j+1, k+1], braceSection; release = braceRelease)
+            brace2 = FrameElement(nodes[i,j+1,k], nodes[i,j,k+1], braceSection; release = braceRelease)
 
             brace1.id = brace2.id = :brace
             push!(braces, brace1, brace2)
@@ -236,8 +265,8 @@ function Frame(nx::Integer,
         for k = 2:nz+1
             for i = 1:nx
                 for j = 1:ny
-                    diaph1 = Element(nodes[i, j, k], nodes[i+1, j+1, k], dsection, :freefree)
-                    diaph2 = Element(nodes[i+1, j, k], nodes[i, j+1, k], dsection, :freefree)
+                    diaph1 = FrameElement(nodes[i, j, k], nodes[i+1, j+1, k], dsection; release = :freefree)
+                    diaph2 = FrameElement(nodes[i+1, j, k], nodes[i, j+1, k], dsection; release = :freefree)
 
                     diaph1.id = diaph2.id = :diaphragm
                     push!(braces, diaph1, diaph2)
@@ -252,7 +281,7 @@ function Frame(nx::Integer,
     ######
 
     loads = [LineLoad(j, [0., 0., -1.]) for j in secondaries]
-    flatnodes = vec(nodes)
+    flatnodes = [vec(nodes); primarynodes]
     elements = [columns; primaries; secondaries; braces]
 
     model = Model(flatnodes, elements, loads)
@@ -260,23 +289,25 @@ function Frame(nx::Integer,
 
 
     #extract node/element indices
-    iExteriorXnodes = [getproperty.(vec(nodes[:,1,:]), :nodeID); getproperty.(vec(nodes[:,end,:]), :nodeID)]
-    iExteriorYnodes = [getproperty.(vec(nodes[1,:,:]), :nodeID); getproperty.(vec(nodes[end,:,:]), :nodeID)]
+    iExteriorXnodes = [getproperty.(vec(nodes[:,1,:]), :index); getproperty.(vec(nodes[:,end,:]), :index)]
+    iExteriorYnodes = [getproperty.(vec(nodes[1,:,:]), :index); getproperty.(vec(nodes[end,:,:]), :index)]
 
     iExteriorXjoists = Vector{Int64}()
     iExteriorYprimary = Vector{Int64}()
+
+    tol = 1e-5
 
     xExtrema = [first(base), first(base) + dx * nx]
     yExtrema = [base[2], base[2] + dy * ny]
     for (i,element) in enumerate(model.elements)
         if element.id == :joist
             x = element.nodeStart.position[1]
-            if minimum(abs.(xExtrema .- x)) <= model.tol
+            if minimum(abs.(xExtrema .- x)) <= tol
                 push!(iExteriorXjoists, i)
             end
         elseif element.id == :primary
             y = element.nodeStart.position[2]
-            if minimum(abs.(yExtrema .- y)) <= model.tol
+            if minimum(abs.(yExtrema .- y)) <= tol
                 push!(iExteriorYprimary, i)
             end
         end

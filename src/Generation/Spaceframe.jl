@@ -1,5 +1,5 @@
 struct SpaceFrame <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     nx::Integer
     dx::Real
     ny::Integer
@@ -47,7 +47,7 @@ function SpaceFrame(nx::Integer,
         base = [0., 0., 0.])
 
     #generate nodes for bottom plane
-    bottomnodes = [TrussNode([dx * (i-1), dy * (j-1), 0.] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
+    bottomnodes = [Node([dx * (i-1), dy * (j-1), 0.] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
     for node in bottomnodes
         node.id = :bottom
     end
@@ -56,13 +56,13 @@ function SpaceFrame(nx::Integer,
     xinit = dx / 2
     yinit = dy / 2
 
-    topnodes = [TrussNode([dx * (i-1) + xinit, dy * (j-1) + yinit, dz], :free) for i in 1:nx, j in 1:ny]
+    topnodes = [Node([dx * (i-1) + xinit, dy * (j-1) + yinit, dz], :free) for i in 1:nx, j in 1:ny]
     for node in topnodes
         node.id = :top
     end
 
     #elements
-    elements = Vector{TrussElement}()
+    elements = Vector{AbstractElement{Float64}}()
 
     #generate bottom horizontal elements
     #parallel to x
@@ -201,7 +201,7 @@ function SpaceFrame(nx::Integer,
     loads  = [NodeForce(node, load) for node in flatnodes if node.id != :support]
 
     #assemble
-    model = TrussModel(flatnodes, elements, loads)
+    model = Model(flatnodes, elements, loads)
     solve!(model)
 
     isupport = findall(model.nodes, :support)
@@ -248,7 +248,7 @@ function SpaceFrame(nx::Integer,
 
     if offset
         #generate nodes for bottom plane
-        bottomnodes = [TrussNode([dx * (i-1), 
+        bottomnodes = [Node([dx * (i-1), 
             dy * (j-1), 
             interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
         for node in bottomnodes
@@ -259,7 +259,7 @@ function SpaceFrame(nx::Integer,
         xinit = dx / 2
         yinit = dy / 2
 
-        topnodes = [TrussNode([dx * (i-1) + xinit, 
+        topnodes = [Node([dx * (i-1) + xinit, 
             dy * (j-1) + yinit, 
             z0 + interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], 
             :free) for i in 1:nx, j in 1:ny]
@@ -269,7 +269,7 @@ function SpaceFrame(nx::Integer,
         end
     else
         #generate nodes for bottom plane
-        bottomnodes = [TrussNode([dx * (i-1), dy * (j-1), 0.] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
+        bottomnodes = [Node([dx * (i-1), dy * (j-1), 0.] .+ base, :free) for i in 1:nx+1, j in 1:ny+1]
         for node in bottomnodes
             node.id = :bottom
         end
@@ -278,7 +278,7 @@ function SpaceFrame(nx::Integer,
         xinit = dx / 2
         yinit = dy / 2
 
-        topnodes = [TrussNode([dx * (i-1) + xinit, 
+        topnodes = [Node([dx * (i-1) + xinit, 
             dy * (j-1) + yinit, 
             z0 + interpolator(dx * (i-1) / xmax, dy * (j-1) /ymax)], 
             :free) for i in 1:nx, j in 1:ny]
@@ -291,7 +291,7 @@ function SpaceFrame(nx::Integer,
     
 
     #elements
-    elements = Vector{TrussElement}()
+    elements = Vector{AbstractElement{Float64}}()
 
     #generate bottom horizontal elements
     #parallel to x
@@ -429,7 +429,7 @@ function SpaceFrame(nx::Integer,
     loads  = [NodeForce(node, load) for node in flatnodes if node.id != :support]
 
     #assemble
-    model = TrussModel(flatnodes, elements, loads)
+    model = Model(flatnodes, elements, loads)
     solve!(model)
 
     isupport = findall(model.nodes, :support)

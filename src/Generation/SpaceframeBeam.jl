@@ -1,5 +1,5 @@
 struct SpaceFrameBeam <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     nx::Integer
     dx::Real
     dy::Real
@@ -23,17 +23,17 @@ struct SpaceFrameBeam <: AbstractGenerator
         z_top = fill(dz, length(x_positions))
 
         #make bottom nodes
-        bottom_nodes = [TrussNode([x, y, z], :free, :bottom) for (x,y,z) in zip(x_positions, y_bottom, z_bottom)]
+        bottom_nodes = [Node([x, y, z], :free, :bottom) for (x,y,z) in zip(x_positions, y_bottom, z_bottom)]
 
         #top nodes 1
-        top1_nodes = [TrussNode([x,y,z], :free, :top1) for (x,y,z) in zip(x_positions, y_top1, z_top)]
+        top1_nodes = [Node([x,y,z], :free, :top1) for (x,y,z) in zip(x_positions, y_top1, z_top)]
         first(top1_nodes).id = :pin
         fixnode!(first(top1_nodes), :pinned)
         last(top1_nodes).id = :roller
         fixnode!(last(top1_nodes), :xfree)
 
         #top nodes 2
-        top2_nodes = [TrussNode([x,y,z], :free, :top2) for (x,y,z) in zip(x_positions, y_top2, z_top)]
+        top2_nodes = [Node([x,y,z], :free, :top2) for (x,y,z) in zip(x_positions, y_top2, z_top)]
         first(top2_nodes).id = :pin
         fixnode!(first(top2_nodes), :pinned)
         last(top2_nodes).id = :roller
@@ -50,7 +50,7 @@ struct SpaceFrameBeam <: AbstractGenerator
         strut_elements = [TrussElement(node1, node2, section, :strut) for (node1, node2) in zip(top1_nodes, top2_nodes)]
 
         #web elements
-        web_elements = Vector{TrussElement}()
+        web_elements = Vector{AbstractElement{Float64}}()
 
         for i = 1:Int(n/2)
 
@@ -75,7 +75,7 @@ struct SpaceFrameBeam <: AbstractGenerator
         elements = [bottom_elements; top1_elements; top2_elements; strut_elements; web_elements]
         loads = [NodeForce(node, load) for node in nodes[:bottom]]
 
-        model = TrussModel(nodes, elements, loads)
+        model = Model(nodes, elements, loads)
         solve!(model)
 
         return new(

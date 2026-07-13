@@ -1,5 +1,5 @@
-abstract type AbstractSection end
-abstract type TorsionAllowed <: AbstractSection end
+abstract type AbstractSteelSection end
+abstract type TorsionAllowed <: AbstractSteelSection end
 
 """
 Wide-flange sections
@@ -102,7 +102,7 @@ end
 """
 Double angles
 """
-struct LL <: AbstractSection
+struct LL <: AbstractSteelSection
     name::String
     A #area [mm²]
     d #leg length 1 [mm]

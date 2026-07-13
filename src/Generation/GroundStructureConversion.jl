@@ -2,7 +2,7 @@ function to_truss(gs::GroundStructure, section::Asap.AbstractSection; load = [1.
 
     @assert in(support, [:xy, :x, :y, :corner])
 
-    nodes = [TrussNode([xy..., 0.], :free, :free) for xy in gs.xy]
+    nodes = [Node([xy..., 0.], :free, :free) for xy in gs.xy]
 
     if support == :xy
         isupport = [gs.igrid[[1,end],:][:]; gs.igrid[2:end-1, [1,end]][:]]
@@ -23,7 +23,7 @@ function to_truss(gs::GroundStructure, section::Asap.AbstractSection; load = [1.
 
     loads = [NodeForce(node, load) for node in nodes[:free]]
 
-    model = TrussModel(nodes, elements, loads)
+    model = Model(nodes, elements, loads)
 
     planar && (planarize!(model))
 
@@ -55,7 +55,7 @@ function to_frame(gs::GroundStructure, section::Asap.Section; load = [0., 0., -1
         node.id = :support
     end 
 
-    elements = [Element(nodes[id]..., section, :free) for id in gs.ielements]
+    elements = [FrameElement(nodes[id]..., section, :free) for id in gs.ielements]
 
     loads = [NodeForce(node, load) for node in nodes[:free]]
 

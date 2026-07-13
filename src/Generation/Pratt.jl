@@ -1,5 +1,5 @@
 struct Pratt2D <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     L::Real
     nbays::Integer
     dx::Real
@@ -21,7 +21,7 @@ function Pratt2D(
     xrange = range(0, L, nbays+1)
 
     #make main nodes
-    main_chord_nodes = [TrussNode([x, 0., 0.], :free, :main) for x in xrange]
+    main_chord_nodes = [Node([x, 0., 0.], :free, :main) for x in xrange]
     n_main = nbays + 1
     
     #make supports
@@ -33,7 +33,7 @@ function Pratt2D(
 
     #make offset nodes
     offset = up ? dy : -dy
-    offset_chord_nodes = [TrussNode([x, offset, 0.], :free, :offset) for x in xrange[2:end-1]]
+    offset_chord_nodes = [Node([x, offset, 0.], :free, :offset) for x in xrange[2:end-1]]
     n_offset = length(offset_chord_nodes)
 
     #make main chord elements
@@ -69,7 +69,7 @@ function Pratt2D(
     loads = [NodeForce(node, load) for node in nodes[:main]]
 
     #assemble
-    model = TrussModel(nodes, elements, loads)
+    model = Model(nodes, elements, loads)
     planarize!(model)
     solve!(model)
 

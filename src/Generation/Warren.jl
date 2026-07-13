@@ -1,5 +1,5 @@
 struct Warren2D <: AbstractGenerator
-    model::TrussModel
+    model::Model{Float64}
     n::Integer
     dx::Real
     dy::Real
@@ -36,7 +36,7 @@ function Warren2D(n::Integer,
     longids = Vector{Int64}()
 
     #node collector
-    nodes = Vector{TrussNode}()
+    nodes = Vector{Node{Float64}}()
 
     #generate longer chord first
     if type == :arch
@@ -52,12 +52,12 @@ function Warren2D(n::Integer,
     for i = 1:n
         xposition = dx * (i - 1)
 
-        node = TrussNode([xposition, 0., 0.], :free)
+        node = Node([xposition, 0., 0.], :free)
         if i == 1
-            node.dof = [false, false, false]
+            fixnode!(node, :pinned)
             node.id = :pin
         elseif i == n
-            node.dof = [true, false, false]
+            node.fixity = vcat([true, false, false], trues(3))
             node.id = :roller
         else
             node.id = longid
@@ -76,7 +76,7 @@ function Warren2D(n::Integer,
     for i = 1:n-1
         xposition = x0 + dx * (i - 1)
 
-        node = TrussNode([xposition, y, 0.], :free)
+        node = Node([xposition, y, 0.], :free)
         node.id = shortid
 
         push!(nodes, node)
@@ -85,8 +85,8 @@ function Warren2D(n::Integer,
     end
 
     #elements
-    elements = Vector{TrussElement}()
-    
+    elements = Vector{AbstractElement{Float64}}()
+
     #long chords
     for i = 1:n-1
         element = TrussElement(nodes[longids[i:i+1]]..., section)
@@ -118,7 +118,7 @@ function Warren2D(n::Integer,
     loads = [NodeForce(n, load) for n in nodes[longid]]
 
     #assemble and solve
-    model = TrussModel(nodes, elements, loads)
+    model = Model(nodes, elements, loads)
     planarize!(model)
     solve!(model)
 
@@ -143,7 +143,7 @@ function Warren2D(xpositions::Vector{<:Real},
     longids = Vector{Int64}()
 
     #node collector
-    nodes = Vector{TrussNode}()
+    nodes = Vector{Node{Float64}}()
 
     #generate longer chord first
     if type == :arch
@@ -160,9 +160,9 @@ function Warren2D(xpositions::Vector{<:Real},
     ## generate long chord up to symmetry
     for (x, y) in zip(xpositions, ypositions)
 
-        node = TrussNode([x, y, 0.], :free)
+        node = Node([x, y, 0.], :free)
         if i == 1
-            node.dof = [false, false, false]
+            fixnode!(node, :pinned)
             node.id = :pin
             i += 1
         else
@@ -178,7 +178,7 @@ function Warren2D(xpositions::Vector{<:Real},
     Lhalf = last(xpositions)
     incs = Lhalf .- reverse(xpositions[1:end-1])
     for (inc, y) in zip(incs, reverse(ypositions[1:end-1]))
-        node = TrussNode([inc, y, 0.], :free)
+        node = Node([inc, y, 0.], :free)
         node.id = longid
         push!(nodes, node)
         push!(longids, count)
@@ -194,7 +194,7 @@ function Warren2D(xpositions::Vector{<:Real},
 
         xposition = mean(xpositions[i:i+1])
 
-        node = TrussNode([xposition, ypositions2[i], 0.], :free)
+        node = Node([xposition, ypositions2[i], 0.], :free)
         node.id = shortid
 
         push!(nodes, node)
@@ -206,7 +206,7 @@ function Warren2D(xpositions::Vector{<:Real},
     for (i, y) in zip(length(xpositions):length(longids), reverse(ypositions2))
         x = first(mean(getproperty.(nodes, :position)[i:i+1]))
 
-        node = TrussNode([x, y, 0.], :free)
+        node = Node([x, y, 0.], :free)
         node.id = shortid
 
         push!(nodes, node)
@@ -217,7 +217,7 @@ function Warren2D(xpositions::Vector{<:Real},
 
 
     #elements
-    elements = Vector{TrussElement}()
+    elements = Vector{AbstractElement{Float64}}()
 
     #long chords
     for i = 1:length(longids) - 1
@@ -250,11 +250,13 @@ function Warren2D(xpositions::Vector{<:Real},
     loads = [NodeForce(n, [0., -1., 0.],) for n in nodes[longid]]
 
     #assemble and solve
-    model = TrussModel(nodes, elements, loads)
+    model = Model(nodes, elements, loads)
     planarize!(model)
     solve!(model)
 
     #collect data
+    #NOTE: pre-existing breakage (unported): `dx` and `dy` were never defined in this
+    #method prior to the v1.0 port; this constructor has always thrown at this line.
     truss = Warren2D(model, n, dx, dy, section, type)
 
 end

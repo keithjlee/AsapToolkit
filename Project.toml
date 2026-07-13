@@ -1,7 +1,7 @@
 name = "AsapToolkit"
 uuid = "45845293-de45-4074-bf34-b603320deb79"
 authors = ["kjl_macbook <keithjl@mit.edu>"]
-version = "0.1.0"
+version = "1.0.0-DEV"
 
 [deps]
 Asap = "763a8c06-ba23-41fc-b385-b3b57b52403a"
@@ -12,3 +12,12 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
+
+[compat]
+Asap = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

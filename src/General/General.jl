@@ -1,9 +1,9 @@
 """
-    clear_supports!(model::Asap.AbstractModel)
+    clear_supports!(model::Model)
 
 Remove all fixed DOFs from a model and reprocess. Will require new definitions of fixed supports before running `solve!()`
 """
-function clear_supports!(model::Asap.AbstractModel)
+function clear_supports!(model::Model)
 
     for node in model.nodes
         fixnode!(node, :free)
@@ -15,17 +15,18 @@ function clear_supports!(model::Asap.AbstractModel)
 end
 
 """
-    element_connectivity(model::Asap.AbstractModel)
+    element_connectivity(model::Model)
 
 Get the Cel = [n_element × n_element] adjacency matrix for a given model, where Cel[i, j] = 1 if element i shares a node with element j, and is 0 otherwise.
 """
-function element_connectivity(model::Asap.AbstractModel)
+function element_connectivity(model::Model)
 
     #element-node connectivity [ne × nn]
     C = connectivity(model)
 
     #initialize element-element connectivity matrix [ne × ne]
-    Cel = spzeros(Int64, model.nElements, model.nElements)
+    n_elements = length(model.elements)
+    Cel = spzeros(Int64, n_elements, n_elements)
 
 
     for irow in axes(C, 1)
