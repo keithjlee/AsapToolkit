@@ -2,7 +2,7 @@
 
 Utility layer over Asap.jl (`../Asap`): structure generators, steel section databases, internal-force diagrams, geometry/displacement sampling, Grasshopper IO. Vendored `AsapSections` submodule for polygon section properties.
 
-**Asap is undergoing a v1.0 modernization (`../Asap/docs/MODERNIZATION.md`); this package migrates in lockstep at Phase 5b.** Key change: `src/ForceAnalysis/` (the `InternalForces` diagram machinery) is being **absorbed into Asap core** (Phase 3, equilibrium-based recovery) and will be deleted here, replaced by a mechanical rename port of consumers. Generators, SteelSections, AsapSections, and IO stay.
+**PORTED to Asap v1.0 on branch `asap-v1`** (see `../Asap/docs/MIGRATION_v1.md`). `src/ForceAnalysis/` is deleted — `InternalForces`/diagrams now live in Asap core with axis-correct names (`old .My → new .Mz`, `old .Mz → −new .My`, `.P → .N`). First test suite lives in `test/` (58 tests). Visual plot verification with Keith still pending.
 
 ## Commands
 
