@@ -1,7 +1,7 @@
 name = "AsapToolkit"
 uuid = "45845293-de45-4074-bf34-b603320deb79"
 authors = ["kjl_macbook <keithjl@mit.edu>"]
-version = "1.0.0-DEV"
+version = "1.0.0"
 
 [deps]
 Asap = "763a8c06-ba23-41fc-b385-b3b57b52403a"
