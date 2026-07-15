@@ -1,3 +1,6 @@
 scratch.jl
 src/Scripts/generalizedform.jl
 .DS_Store
+
+# personal working docs — local only
+CLAUDE.md
