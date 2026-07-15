@@ -97,7 +97,7 @@ struct GHelement
         istart, iend = (element.nodeStart.index, element.nodeEnd.index) .- 1
         elementID = element.index - 1
         section = GHsection(element.section)
-        psi = element.Ψ
+        psi = element.rollangle
         lcs = local_frame(element)
         lx, ly, lz = [Vector(lcs[i, :]) for i in 1:3]
         id = isnothing(element.id) ? "" : string(element.id)
