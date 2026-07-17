@@ -14,19 +14,21 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
 
 [[deps.Asap]]
-deps = ["LinearAlgebra", "SparseArrays", "StaticArrays"]
+deps = ["CommonSolve", "LinearAlgebra", "SparseArrays", "StaticArrays"]
 path = "../Asap"
 uuid = "763a8c06-ba23-41fc-b385-b3b57b52403a"
-version = "1.0.0"
+version = "1.1.0"
 
     [deps.Asap.extensions]
     AsapChainRulesExt = "ChainRulesCore"
     AsapEnzymeExt = ["Enzyme", "ChainRulesCore"]
+    AsapLinearSolveExt = "LinearSolve"
     AsapMooncakeExt = ["Mooncake", "ChainRulesCore"]
 
     [deps.Asap.weakdeps]
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+    LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
     Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 
 [[deps.AsapToolkit]]
@@ -46,6 +48,11 @@ deps = ["TranscodingStreams", "Zlib_jll"]
 git-tree-sha1 = "962834c22b66e32aa10f7611c08c8ca4e20749a9"
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
 version = "0.7.8"
+
+[[deps.CommonSolve]]
+git-tree-sha1 = "eeaad7cef88554c2fa56b5a3f71cfd5cb708c662"
+uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+version = "0.2.11"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
